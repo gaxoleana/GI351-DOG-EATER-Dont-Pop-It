@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -21,10 +22,24 @@ public class BubbleGumPlayer : MonoBehaviour
     [SerializeField] private Vector3 maxBubbleScale = new Vector3(2.5f, 2.5f, 1f);
     [SerializeField] private float scaleSpeed = 4f;
 
+    [Header("Gum Panic Event")]
+    [SerializeField] private Image redVignette;
+    [SerializeField] private float minTimeBetweenPanics = 8f;
+    [SerializeField] private float maxTimeBetweenPanics = 18f;
+    [SerializeField] private int requiredSpamClicks = 6;
+    [SerializeField] private float panicTimeLimit = 2.5f;
+
+    // Essential Components
     private Rigidbody2D rb;
     private float currentStamina;
     private bool isHoldingButton = false;
     private bool isExhausted = false;
+    private bool isPopped = false;
+
+    // Panic State
+    private bool inPanicState = false;
+    private int currentSpamClicks = 0;
+    private float panicTimer = 0f;
 
     private void Awake()
     {
@@ -32,8 +47,43 @@ public class BubbleGumPlayer : MonoBehaviour
         currentStamina = maxStamina;
     }
 
+    private void Start()
+    {
+        StartCoroutine(RandomPanicRoutine());
+    }
+
     private void Update()
     {
+        if (isPopped) return;
+
+        if (inPanicState)
+        {
+            if (redVignette != null)
+            {
+                float alpha = Mathf.PingPong(Time.time * 6f, 0.6f) + 0.2f;
+                redVignette.color = new Color(1f, 0f, 0f, alpha);
+            }
+
+            if (Input.GetMouseButtonDown(0) || Input.GetKeyDown(KeyCode.Space))
+            {
+                currentSpamClicks++;
+                if (bubbleTransform != null) bubbleTransform.localScale *= 1.08f;
+
+                if (currentSpamClicks >= requiredSpamClicks)
+                {
+                    ResolvePanicSuccess();
+                }
+            }
+
+            panicTimer -= Time.deltaTime;
+            if (panicTimer <= 0f)
+            {
+                PopBubble();
+            }
+
+            return;
+        }
+
         bool inputPressed = Input.GetMouseButton(0) || Input.GetKey(KeyCode.Space);
 
         if (isExhausted && currentStamina > maxStamina * 0.1f)
@@ -60,7 +110,7 @@ public class BubbleGumPlayer : MonoBehaviour
             if (currentStamina < maxStamina)
             {
                 currentStamina += staminaRegenRate * Time.deltaTime;
-                currentStamina = Mathf.Min(currentStamina, maxMaxStamina(maxStamina));
+                currentStamina = Mathf.Min(currentStamina, maxStamina);
             }
         }
 
@@ -76,18 +126,67 @@ public class BubbleGumPlayer : MonoBehaviour
         }
     }
 
-    private float maxMaxStamina(float max) => max;
-
     private void FixedUpdate()
     {
-        if (isHoldingButton)
+        if ((isHoldingButton || inPanicState) && !isPopped)
         {
             rb.gravityScale = inflatedGravity;
-            rb.AddForce(Vector2.up * inflateUpwardForce, ForceMode2D.Force);
+
+            if (isHoldingButton && !inPanicState)
+            {
+                rb.AddForce(Vector2.up * inflateUpwardForce, ForceMode2D.Force);
+            }
         }
         else
         {
             rb.gravityScale = normalGravity;
+        }
+    }
+
+    private void PopBubble()
+    {
+        isPopped = true;
+        inPanicState = false;
+        isHoldingButton = false;
+
+        currentStamina = 0f;
+        if (staminaBarFill != null) staminaBarFill.fillAmount = 0f;
+
+        if (redVignette != null) redVignette.color = new Color(1f, 0f, 0f, 0f);
+
+        if (bubbleTransform != null)
+        {
+            bubbleTransform.gameObject.SetActive(false);
+        }
+    }
+
+    private IEnumerator RandomPanicRoutine()
+    {
+        while (true)
+        {
+            float waitTime = Random.Range(minTimeBetweenPanics, maxTimeBetweenPanics);
+            yield return new WaitForSeconds(waitTime);
+
+            if (!inPanicState && !isPopped)
+            {
+                TriggerPanicEvent();
+            }
+        }
+    }
+
+    private void TriggerPanicEvent()
+    {
+        inPanicState = true;
+        currentSpamClicks = 0;
+        panicTimer = panicTimeLimit;
+    }
+
+    private void ResolvePanicSuccess()
+    {
+        inPanicState = false;
+        if (redVignette != null)
+        {
+            redVignette.color = new Color(1f, 0f, 0f, 0f);
         }
     }
 
@@ -101,7 +200,7 @@ public class BubbleGumPlayer : MonoBehaviour
 
     private void Die()
     {
-        GetComponent<Rigidbody2D>().simulated = false;
+        rb.simulated = false;
 
         if (GameOverManager.Instance != null)
         {
