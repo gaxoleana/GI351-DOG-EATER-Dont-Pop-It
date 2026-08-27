@@ -3,21 +3,21 @@ using TMPro;
 
 public class ScoreManager : MonoBehaviour
 {
-    [Header("UI References")]
+    [Header("UI Settings")]
     [SerializeField] private TextMeshProUGUI scoreText;
-    [SerializeField] private TextMeshProUGUI highScoreText;
+    [SerializeField] private TextMeshProUGUI highestScoreText;
 
     [Header("Score Settings")]
     [SerializeField] private float scorePerSecond = 1f;
     [SerializeField] private float scoreMultiplier = 1f;
 
     private float currentScore = 0f;
-    private int highScore = 0;
+    private int highestScore = 0;
     private bool isPlayerAlive = true;
 
     private void Start()
     {
-        highScore = PlayerPrefs.GetInt("Highest", 0);
+        highestScore = PlayerPrefs.GetInt("Highest", 0);
         UpdateHighScoreUI();
     }
 
@@ -38,10 +38,10 @@ public class ScoreManager : MonoBehaviour
         isPlayerAlive = false;
 
         int finalScore = Mathf.FloorToInt(currentScore);
-        if (finalScore > highScore)
+        if (finalScore > highestScore)
         {
-            highScore = finalScore;
-            PlayerPrefs.SetInt("Highest", highScore);
+            highestScore = finalScore;
+            PlayerPrefs.SetInt("Highest", highestScore);
             PlayerPrefs.Save();
             UpdateHighScoreUI();
         }
@@ -56,9 +56,9 @@ public class ScoreManager : MonoBehaviour
 
     private void UpdateHighScoreUI()
     {
-        if (highScoreText != null)
+        if (highestScoreText != null)
         {
-            highScoreText.text = $"Highest\n{highScore} Score";
+            highestScoreText.text = $"Highest: {highestScore} Score";
         }
     }
 }

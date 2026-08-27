@@ -8,7 +8,7 @@ public class GameOverManager : MonoBehaviour
 
     [Header("UI Panels & Text")]
     [SerializeField] private GameObject gameOverPanel;
-    [SerializeField] private TextMeshProUGUI finalScoreText;
+    [SerializeField] private TextMeshProUGUI highestScoreText;
 
     private void Awake()
     {
@@ -19,15 +19,15 @@ public class GameOverManager : MonoBehaviour
     {
         int score = 0;
 
-        ScoreManager scoreManager = FindObjectOfType<ScoreManager>();
+        ScoreManager scoreManager = FindAnyObjectByType<ScoreManager>();
         if (scoreManager != null)
         {
             score = scoreManager.OnPlayerDied();
         }
 
-        if (finalScoreText != null)
+        if (highestScoreText != null)
         {
-            finalScoreText.text = $"Highest Score: {score}";
+            highestScoreText.text = $"Highest Score: {score}";
         }
 
         Time.timeScale = 0f;
