@@ -1,14 +1,18 @@
-using System.Collections;
+﻿using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
 [RequireComponent(typeof(Rigidbody2D))]
 public class Player : MonoBehaviour
 {
+    private enum EventType { None, RedSpam, BlueFreeze }
+
     [Header("Gravity Settings")]
     [SerializeField] private float inflateUpwardForce = 15f;
     [SerializeField] private float normalGravity = 3f;
     [SerializeField] private float inflatedGravity = 0.5f;
+    [SerializeField] private float blueEventGravity = 0.15f; // ค่าแรงโน้มถ่วงตอนติดฟ้า (ค่อยๆ ร่วงช้ามาก)
+    [SerializeField] private float blueMaxFallSpeed = 1f;    // จำกัดความเร็วตกไม่ให้หล่นเร็วเกินไป
 
     [Header("Stamina Settings")]
     [SerializeField] private float maxStamina = 100f;
@@ -22,14 +26,20 @@ public class Player : MonoBehaviour
     [SerializeField] private Vector3 maxBubbleScale = new Vector3(2.5f, 2.5f, 1f);
     [SerializeField] private float scaleSpeed = 4f;
 
-    [Header("Gum Panic Event")]
+    [Header("Gum Event Overlays")]
     [SerializeField] private Image redVignette;
+    [SerializeField] private Image blueVignette; // เพิ่มช่องลาก UI ขอบจอฟ้า
+
+    [Header("Gum Event Progress Bar")]
     [SerializeField] private GameObject panicBarBackground;
     [SerializeField] private Image panicBarFill;
+
+    [Header("Event Timing & Difficulty")]
     [SerializeField] private float minTimeBetweenPanics = 8f;
     [SerializeField] private float maxTimeBetweenPanics = 18f;
     [SerializeField] private int requiredSpamClicks = 6;
-    [SerializeField] private float panicTimeLimit = 2.5f;
+    [SerializeField] private float redPanicTimeLimit = 2.5f;
+    [SerializeField] private float blueFreezeDuration = 2.5f; // เวลาที่ต้องปล่อยมือห้ามกด
 
     // Essential Variables
     private Rigidbody2D rb;
@@ -38,10 +48,10 @@ public class Player : MonoBehaviour
     private bool isExhausted = false;
     private bool isPopped = false;
 
-    // Panic State Variables
-    private bool inPanicState = false;
+    // Event State Variables
+    private EventType currentEvent = EventType.None;
     private int currentSpamClicks = 0;
-    private float panicTimer = 0f;
+    private float eventTimer = 0f;
 
     private void Awake()
     {
@@ -59,7 +69,11 @@ public class Player : MonoBehaviour
     {
         if (isPopped) return;
 
-        if (inPanicState)
+        bool inputDown = Input.GetMouseButtonDown(0) || Input.GetKeyDown(KeyCode.Space);
+        bool inputPressed = Input.GetMouseButton(0) || Input.GetKey(KeyCode.Space);
+
+        // ---------------- 1. EVENT สีแดง (รัวปุ่มเพื่อแก้) ----------------
+        if (currentEvent == EventType.RedSpam)
         {
             if (redVignette != null)
             {
@@ -67,7 +81,7 @@ public class Player : MonoBehaviour
                 redVignette.color = new Color(1f, 0f, 0f, alpha);
             }
 
-            if (Input.GetMouseButtonDown(0) || Input.GetKeyDown(KeyCode.Space))
+            if (inputDown)
             {
                 currentSpamClicks++;
 
@@ -84,17 +98,62 @@ public class Player : MonoBehaviour
                 }
             }
 
-            panicTimer -= Time.deltaTime;
-            if (panicTimer <= 0f)
+            eventTimer -= Time.deltaTime;
+            if (eventTimer <= 0f)
             {
-                PopBubble();
+                PopBubble(); // กดไม่ทันเวลา = แตก
             }
 
             return;
         }
+        // ---------------- 2. EVENT สีฟ้า (ห้ามกดเด็ดขาด) ----------------
+        if (currentEvent == EventType.BlueFreeze)
+        {
+            if (blueVignette != null)
+            {
+                float alpha = Mathf.PingPong(Time.time * 4f, 0.5f) + 0.3f;
+                blueVignette.color = new Color(0f, 0.5f, 1f, alpha);
+            }
 
-        bool inputPressed = Input.GetMouseButton(0) || Input.GetKey(KeyCode.Space);
+            // คำนวณเวลาที่ผ่านไปตั้งแต่เริ่ม Event ฟ้า
+            float timePassedInEvent = blueFreezeDuration - eventTimer;
 
+            // 1) ถ้าผู้เล่น "กดปุ่มใหม่" จังหวะนี้ = แตกทันที
+            // 2) หรือถ้าผ่านช่วงเวลาเผื่อใจ (0.35 วินาทีแรก) ไปแล้วแต่นิ้วยัง "กดค้างไม่ยอมปล่อย" = แตกทันที
+            if (inputDown || (timePassedInEvent > 1f && inputPressed))
+            {
+                PopBubble();
+                return;
+            }
+
+            // --- เพิ่มการฟื้นฟู Stamina ขณะติดฟ้า ---
+            if (currentStamina < maxStamina)
+            {
+                currentStamina += staminaRegenRate * Time.deltaTime;
+                currentStamina = Mathf.Min(currentStamina, maxStamina);
+            }
+
+            // อัปเดตหลอด Stamina UI ตามปกติ
+            if (staminaBarFill != null)
+            {
+                staminaBarFill.fillAmount = currentStamina / maxStamina;
+            }
+
+            // หลอดเวลาสีฟ้าจะค่อยๆ ลดลงถอยหลัง
+            eventTimer -= Time.deltaTime;
+            if (panicBarFill != null)
+            {
+                panicBarFill.fillAmount = eventTimer / blueFreezeDuration;
+            }
+
+            if (eventTimer <= 0f)
+            {
+                ResolvePanicSuccess(); // อดทนไม่กดจนครบเวลา = ผ่าน
+            }
+
+            return;
+        }
+        // ---------------- 3. NORMAL GAMEPLAY ----------------
         if (isExhausted && currentStamina > maxStamina * 0.1f)
         {
             isExhausted = false;
@@ -137,15 +196,41 @@ public class Player : MonoBehaviour
 
     private void FixedUpdate()
     {
-        if ((isHoldingButton || inPanicState) && !isPopped)
+        if (isPopped)
+        {
+            rb.gravityScale = normalGravity;
+            return;
+        }
+
+        // 1. ถ้าติด Event สีฟ้า -> ค่อยๆ ร่วงช้าๆ แบบนุ่มนวล
+        if (currentEvent == EventType.BlueFreeze)
+        {
+            rb.gravityScale = blueEventGravity;
+
+            // ล็อกความเร็วร่วง ไม่ให้ตกลงมาเร็วเกินเพดานที่ตั้งไว้
+
+            if (rb.linearVelocity.y < -blueMaxFallSpeed)
+            {
+                rb.linearVelocity = new Vector2(rb.linearVelocity.x, -blueMaxFallSpeed);
+            }
+
+            if (rb.velocity.y < -blueMaxFallSpeed)
+            {
+                rb.velocity = new Vector2(rb.velocity.x, -blueMaxFallSpeed);
+            }
+
+        }
+        // 2. ถ้าติด Event สีแดง หรือ กำลังกดค้างลอยตัวปกติ
+        else if (isHoldingButton || currentEvent == EventType.RedSpam)
         {
             rb.gravityScale = inflatedGravity;
 
-            if (isHoldingButton && !inPanicState)
+            if (isHoldingButton && currentEvent == EventType.None)
             {
                 rb.AddForce(Vector2.up * inflateUpwardForce, ForceMode2D.Force);
             }
         }
+        // 3. ปล่อยปุ่มช่วงปกติ
         else
         {
             rb.gravityScale = normalGravity;
@@ -155,13 +240,14 @@ public class Player : MonoBehaviour
     private void PopBubble()
     {
         isPopped = true;
-        inPanicState = false;
+        currentEvent = EventType.None;
         isHoldingButton = false;
 
         currentStamina = 0f;
         if (staminaBarFill != null) staminaBarFill.fillAmount = 0f;
 
         if (redVignette != null) redVignette.color = new Color(1f, 0f, 0f, 0f);
+        if (blueVignette != null) blueVignette.color = new Color(0f, 0.5f, 1f, 0f);
         if (panicBarBackground != null) panicBarBackground.SetActive(false);
 
         if (bubbleTransform != null)
@@ -177,28 +263,53 @@ public class Player : MonoBehaviour
             float waitTime = Random.Range(minTimeBetweenPanics, maxTimeBetweenPanics);
             yield return new WaitForSeconds(waitTime);
 
-            if (!inPanicState && !isPopped)
+            if (currentEvent == EventType.None && !isPopped)
             {
-                TriggerPanicEvent();
+                // สุ่ม 50/50 ว่าจะเป็นสีแดง หรือ สีฟ้า
+                int rand = Random.Range(0, 2);
+                if (rand == 0)
+                {
+                    TriggerRedEvent();
+                }
+                else
+                {
+                    TriggerBlueEvent();
+                }
             }
         }
     }
 
-    private void TriggerPanicEvent()
+    private void TriggerRedEvent()
     {
-        inPanicState = true;
+        currentEvent = EventType.RedSpam;
         currentSpamClicks = 0;
-        panicTimer = panicTimeLimit;
+        eventTimer = redPanicTimeLimit;
 
+        if (panicBarFill != null) panicBarFill.color = Color.red;
         if (panicBarBackground != null) panicBarBackground.SetActive(true);
         if (panicBarFill != null) panicBarFill.fillAmount = 0f;
     }
 
+    private void TriggerBlueEvent()
+    {
+        currentEvent = EventType.BlueFreeze;
+        eventTimer = blueFreezeDuration;
+
+        // ล้างความเร็วตกเดิม เพื่อให้เริ่มร่อนลงช้าๆ นุ่มนวล
+        rb.linearVelocity = Vector2.zero;
+        rb.velocity = Vector2.zero;
+
+        if (panicBarFill != null) panicBarFill.color = Color.cyan;
+        if (panicBarBackground != null) panicBarBackground.SetActive(true);
+        if (panicBarFill != null) panicBarFill.fillAmount = 1f;
+    }
+
     private void ResolvePanicSuccess()
     {
-        inPanicState = false;
+        currentEvent = EventType.None;
 
         if (redVignette != null) redVignette.color = new Color(1f, 0f, 0f, 0f);
+        if (blueVignette != null) blueVignette.color = new Color(0f, 0.5f, 1f, 0f);
         if (panicBarBackground != null) panicBarBackground.SetActive(false);
     }
 
