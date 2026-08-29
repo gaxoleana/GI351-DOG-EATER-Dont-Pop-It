@@ -24,19 +24,21 @@ public class Player : MonoBehaviour
 
     [Header("Gum Panic Event")]
     [SerializeField] private Image redVignette;
+    [SerializeField] private GameObject panicBarBackground;
+    [SerializeField] private Image panicBarFill;
     [SerializeField] private float minTimeBetweenPanics = 8f;
     [SerializeField] private float maxTimeBetweenPanics = 18f;
     [SerializeField] private int requiredSpamClicks = 6;
     [SerializeField] private float panicTimeLimit = 2.5f;
 
-    // Essential Components
+    // Essential Variables
     private Rigidbody2D rb;
     private float currentStamina;
     private bool isHoldingButton = false;
     private bool isExhausted = false;
     private bool isPopped = false;
 
-    // Panic State
+    // Panic State Variables
     private bool inPanicState = false;
     private int currentSpamClicks = 0;
     private float panicTimer = 0f;
@@ -49,6 +51,7 @@ public class Player : MonoBehaviour
 
     private void Start()
     {
+        if (panicBarBackground != null) panicBarBackground.SetActive(false);
         StartCoroutine(RandomPanicRoutine());
     }
 
@@ -67,7 +70,13 @@ public class Player : MonoBehaviour
             if (Input.GetMouseButtonDown(0) || Input.GetKeyDown(KeyCode.Space))
             {
                 currentSpamClicks++;
-                if (bubbleTransform != null) bubbleTransform.localScale *= 1.08f;
+
+                if (panicBarFill != null)
+                {
+                    panicBarFill.fillAmount = (float)currentSpamClicks / requiredSpamClicks;
+                }
+
+                if (bubbleTransform != null) bubbleTransform.localScale *= 1.05f;
 
                 if (currentSpamClicks >= requiredSpamClicks)
                 {
@@ -153,6 +162,7 @@ public class Player : MonoBehaviour
         if (staminaBarFill != null) staminaBarFill.fillAmount = 0f;
 
         if (redVignette != null) redVignette.color = new Color(1f, 0f, 0f, 0f);
+        if (panicBarBackground != null) panicBarBackground.SetActive(false);
 
         if (bubbleTransform != null)
         {
@@ -179,15 +189,17 @@ public class Player : MonoBehaviour
         inPanicState = true;
         currentSpamClicks = 0;
         panicTimer = panicTimeLimit;
+
+        if (panicBarBackground != null) panicBarBackground.SetActive(true);
+        if (panicBarFill != null) panicBarFill.fillAmount = 0f;
     }
 
     private void ResolvePanicSuccess()
     {
         inPanicState = false;
-        if (redVignette != null)
-        {
-            redVignette.color = new Color(1f, 0f, 0f, 0f);
-        }
+
+        if (redVignette != null) redVignette.color = new Color(1f, 0f, 0f, 0f);
+        if (panicBarBackground != null) panicBarBackground.SetActive(false);
     }
 
     private void OnTriggerEnter2D(Collider2D other)
