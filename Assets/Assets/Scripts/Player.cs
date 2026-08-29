@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEngine.UI;
 
 [RequireComponent(typeof(Rigidbody2D))]
-public class BubbleGumPlayer : MonoBehaviour
+public class Player : MonoBehaviour
 {
     [Header("Gravity Settings")]
     [SerializeField] private float inflateUpwardForce = 15f;
