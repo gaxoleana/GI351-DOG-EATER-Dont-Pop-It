@@ -214,9 +214,9 @@ public class Player : MonoBehaviour
                 rb.linearVelocity = new Vector2(rb.linearVelocity.x, -blueMaxFallSpeed);
             }
 
-            if (rb.velocity.y < -blueMaxFallSpeed)
+            if (rb.linearVelocity.y < -blueMaxFallSpeed)
             {
-                rb.velocity = new Vector2(rb.velocity.x, -blueMaxFallSpeed);
+                rb.linearVelocity = new Vector2(rb.linearVelocity.x, -blueMaxFallSpeed);
             }
 
         }
@@ -297,7 +297,7 @@ public class Player : MonoBehaviour
 
         // ล้างความเร็วตกเดิม เพื่อให้เริ่มร่อนลงช้าๆ นุ่มนวล
         rb.linearVelocity = Vector2.zero;
-        rb.velocity = Vector2.zero;
+        rb.linearVelocity = Vector2.zero;
 
         if (panicBarFill != null) panicBarFill.color = Color.cyan;
         if (panicBarBackground != null) panicBarBackground.SetActive(true);
