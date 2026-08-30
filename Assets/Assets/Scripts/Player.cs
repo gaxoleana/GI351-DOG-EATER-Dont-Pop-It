@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
+using Unity.Cinemachine;
 
 [RequireComponent(typeof(Rigidbody2D))]
 public class Player : MonoBehaviour
@@ -84,6 +85,11 @@ public class Player : MonoBehaviour
             if (inputDown)
             {
                 currentSpamClicks++;
+
+                if (TryGetComponent<CinemachineImpulseSource>(out var impulse))
+                {
+                    impulse.GenerateImpulse(0.15f);
+                }
 
                 if (panicBarFill != null)
                 {
@@ -239,6 +245,11 @@ public class Player : MonoBehaviour
 
     private void PopBubble()
     {
+        if (TryGetComponent<CinemachineImpulseSource>(out var impulse))
+        {
+            impulse.GenerateImpulse(1.0f);
+        }
+
         isPopped = true;
         currentEvent = EventType.None;
         isHoldingButton = false;
@@ -285,6 +296,11 @@ public class Player : MonoBehaviour
         currentSpamClicks = 0;
         eventTimer = redPanicTimeLimit;
 
+        if (TryGetComponent<CinemachineImpulseSource>(out var impulse))
+        {
+            impulse.GenerateImpulse(0.5f);
+        }
+
         if (panicBarFill != null) panicBarFill.color = Color.red;
         if (panicBarBackground != null) panicBarBackground.SetActive(true);
         if (panicBarFill != null) panicBarFill.fillAmount = 0f;
@@ -294,6 +310,11 @@ public class Player : MonoBehaviour
     {
         currentEvent = EventType.BlueFreeze;
         eventTimer = blueFreezeDuration;
+
+        if (TryGetComponent<CinemachineImpulseSource>(out var impulse))
+        {
+            impulse.GenerateImpulse(0.5f);
+        }
 
         // ล้างความเร็วตกเดิม เพื่อให้เริ่มร่อนลงช้าๆ นุ่มนวล
         rb.linearVelocity = Vector2.zero;
