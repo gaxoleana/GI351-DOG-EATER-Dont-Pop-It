@@ -1112,6 +1112,7 @@ GameObject:
   - component: {fileID: 418234948}
   - component: {fileID: 418234947}
   - component: {fileID: 418234949}
+  - component: {fileID: 418234950}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -1168,7 +1169,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 10
   m_MaskInteraction: 0
-  m_Sprite: {fileID: -2413806693520163455, guid: a86470a33a6bf42c4b3595704624658b, type: 3}
+  m_Sprite: {fileID: -4913982344839117222, guid: 1c95bf275163e8641a82836a1c9a9a31, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -1189,8 +1190,8 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
+  m_LocalScale: {x: 0.1, y: 0.1, z: 0.1}
+  m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 1054454690}
   m_Father: {fileID: 0}
@@ -1244,9 +1245,9 @@ MonoBehaviour:
   staminaRegenRate: 25
   staminaBarFill: {fileID: 758023967}
   bubbleTransform: {fileID: 1054454690}
-  minBubbleScale: {x: 0.5, y: 0.5, z: 1}
-  maxBubbleScale: {x: 2.5, y: 2.5, z: 1}
-  scaleSpeed: 4
+  minBubbleScale: {x: 3, y: 3, z: 1}
+  maxBubbleScale: {x: 100, y: 100, z: 1}
+  scaleSpeed: 0.25
   redVignette: {fileID: 1553242530}
   blueVignette: {fileID: 2125261172}
   panicBarBackground: {fileID: 1656357891}
@@ -1421,6 +1422,28 @@ MonoBehaviour:
   startDistanceMeters: 4500
   suffix: ' m'
   decimalPlaces: 0
+--- !u!95 &418234950
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 418234941}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: b94f5134a1da4054ebe097d4ac1e9589, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!1 &436803010
 GameObject:
   m_ObjectHideFlags: 0
@@ -2876,7 +2899,7 @@ Transform:
   m_GameObject: {fileID: 1054454689}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.5, y: 0.25, z: 0}
+  m_LocalPosition: {x: -3.9, y: 18.5, z: 0}
   m_LocalScale: {x: 0.5, y: 0.5, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -2932,7 +2955,7 @@ SpriteRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_Sprite: {fileID: -2413806693520163455, guid: a86470a33a6bf42c4b3595704624658b, type: 3}
-  m_Color: {r: 1, g: 0, b: 1, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
