@@ -42,12 +42,22 @@ public class Player : MonoBehaviour
     [SerializeField] private float redPanicTimeLimit = 2.5f;
     [SerializeField] private float blueFreezeDuration = 2.5f; // เวลาที่ต้องปล่อยมือห้ามกด
 
+    [Header("Pre-Event Warning Settings")]
+    [SerializeField] private Image redWarningImage;   // รูป PNG เตือนก่อนเกิด Red Event (ต้องเป็น UI Image บน Canvas)
+    [SerializeField] private Image blueWarningImage;  // รูป PNG เตือนก่อนเกิด Blue Event (ต้องเป็น UI Image บน Canvas)
+    [SerializeField] private Vector2 warningStartAnchoredPos = new Vector2(-500f, 0f); // ตำแหน่งเริ่ม (นอกจอฝั่งซ้าย)
+    [SerializeField] private Vector2 warningEndAnchoredPos = new Vector2(300f, 0f);    // ตำแหน่งปลายทาง (ฝั่งขวาของจอ)
+    [SerializeField] private float warningFadeInDuration = 0.4f;
+    [SerializeField] private float warningHoldDuration = 1.5f;
+    [SerializeField] private float warningFadeOutDuration = 0.4f;
+
     // Essential Variables
     private Rigidbody2D rb;
     private float currentStamina;
     private bool isHoldingButton = false;
     private bool isExhausted = false;
     private bool isPopped = false;
+    private bool isPreEventWarning = false; // true ระหว่างที่กำลังเล่น Warning ก่อน Event (หยุดทุกอย่างชั่วคราว)
 
     // Event State Variables
     private EventType currentEvent = EventType.None;
@@ -63,12 +73,15 @@ public class Player : MonoBehaviour
     private void Start()
     {
         if (panicBarBackground != null) panicBarBackground.SetActive(false);
+        if (redWarningImage != null) redWarningImage.gameObject.SetActive(false);
+        if (blueWarningImage != null) blueWarningImage.gameObject.SetActive(false);
         StartCoroutine(RandomPanicRoutine());
     }
 
     private void Update()
     {
         if (isPopped) return;
+        if (isPreEventWarning) return; // ระหว่าง Warning ห้ามรับ Input หรือขยับใด ๆ ทั้งสิ้น
 
         bool inputDown = Input.GetMouseButtonDown(0) || Input.GetKeyDown(KeyCode.Space);
         bool inputPressed = Input.GetMouseButton(0) || Input.GetKey(KeyCode.Space);
@@ -208,6 +221,14 @@ public class Player : MonoBehaviour
             return;
         }
 
+        if (isPreEventWarning)
+        {
+            // แช่แข็งผู้เล่นไว้กับที่ระหว่างเล่น Warning กันตกหรือลอยเพี้ยนก่อน Event จะเริ่ม
+            rb.gravityScale = 0f;
+            rb.linearVelocity = Vector2.zero;
+            return;
+        }
+
         // 1. ถ้าติด Event สีฟ้า -> ค่อยๆ ร่วงช้าๆ แบบนุ่มนวล
         if (currentEvent == EventType.BlueFreeze)
         {
@@ -253,6 +274,7 @@ public class Player : MonoBehaviour
         isPopped = true;
         currentEvent = EventType.None;
         isHoldingButton = false;
+        isPreEventWarning = false; // กันเคสแตกระหว่าง Warning ค้างไว้ ไม่ให้ Player ถูกล็อกค้าง
 
         currentStamina = 0f;
         if (staminaBarFill != null) staminaBarFill.fillAmount = 0f;
@@ -260,6 +282,8 @@ public class Player : MonoBehaviour
         if (redVignette != null) redVignette.color = new Color(1f, 0f, 0f, 0f);
         if (blueVignette != null) blueVignette.color = new Color(0f, 0.5f, 1f, 0f);
         if (panicBarBackground != null) panicBarBackground.SetActive(false);
+        if (redWarningImage != null) redWarningImage.gameObject.SetActive(false);
+        if (blueWarningImage != null) blueWarningImage.gameObject.SetActive(false);
 
         if (bubbleTransform != null)
         {
@@ -274,20 +298,98 @@ public class Player : MonoBehaviour
             float waitTime = Random.Range(minTimeBetweenPanics, maxTimeBetweenPanics);
             yield return new WaitForSeconds(waitTime);
 
-            if (currentEvent == EventType.None && !isPopped)
+            if (currentEvent == EventType.None && !isPopped && !isPreEventWarning)
             {
                 // สุ่ม 50/50 ว่าจะเป็นสีแดง หรือ สีฟ้า
                 int rand = Random.Range(0, 2);
-                if (rand == 0)
-                {
-                    TriggerRedEvent();
-                }
-                else
-                {
-                    TriggerBlueEvent();
-                }
+                EventType nextEvent = (rand == 0) ? EventType.RedSpam : EventType.BlueFreeze;
+
+                StartCoroutine(PlayWarningThenTriggerEvent(nextEvent));
             }
         }
+    }
+
+    // เล่นภาพเตือนก่อน แล้วค่อยเริ่ม Event จริงหลัง Warning จบ
+    private IEnumerator PlayWarningThenTriggerEvent(EventType eventToTrigger)
+    {
+        isPreEventWarning = true;
+
+        // หยุดความเร็วตกทันทีตอนเริ่ม Warning กันบัคตกค้างจากเฟรมก่อนหน้า
+        if (rb != null) rb.linearVelocity = Vector2.zero;
+
+        Image warningImage = (eventToTrigger == EventType.RedSpam) ? redWarningImage : blueWarningImage;
+
+        if (warningImage != null)
+        {
+            yield return StartCoroutine(PlayWarningAnimation(warningImage));
+        }
+        else
+        {
+            // ไม่ได้ผูกรูป Warning ไว้ ก็รอเวลาเทียบเท่าแทน กัน Event โผล่มาแบบไม่ทันตั้งตัว
+            yield return new WaitForSeconds(warningFadeInDuration + warningHoldDuration + warningFadeOutDuration);
+        }
+
+        isPreEventWarning = false;
+
+        if (eventToTrigger == EventType.RedSpam)
+        {
+            TriggerRedEvent();
+        }
+        else
+        {
+            TriggerBlueEvent();
+        }
+    }
+
+    // Fade In พร้อมเลื่อนจากซ้ายไปขวา -> ค้างไว้ -> Fade Out (ควบคุมด้วยโค้ดล้วน ไม่ใช้ Animation)
+    private IEnumerator PlayWarningAnimation(Image warningImage)
+    {
+        RectTransform rt = warningImage.rectTransform;
+
+        warningImage.gameObject.SetActive(true);
+
+        Color c = warningImage.color;
+        rt.anchoredPosition = warningStartAnchoredPos;
+        c.a = 0f;
+        warningImage.color = c;
+
+        // 1) Fade In + เลื่อนจากซ้ายไปขวาพร้อมกัน
+        float t = 0f;
+        while (t < warningFadeInDuration)
+        {
+            t += Time.deltaTime;
+            float progress = Mathf.Clamp01(t / warningFadeInDuration);
+
+            rt.anchoredPosition = Vector2.Lerp(warningStartAnchoredPos, warningEndAnchoredPos, progress);
+            c.a = progress;
+            warningImage.color = c;
+
+            yield return null;
+        }
+
+        rt.anchoredPosition = warningEndAnchoredPos;
+        c.a = 1f;
+        warningImage.color = c;
+
+        // 2) ค้างภาพไว้ตามเวลาที่กำหนด
+        yield return new WaitForSeconds(warningHoldDuration);
+
+        // 3) Fade Out ออกไป (ค้างตำแหน่งเดิม)
+        t = 0f;
+        while (t < warningFadeOutDuration)
+        {
+            t += Time.deltaTime;
+            float progress = Mathf.Clamp01(t / warningFadeOutDuration);
+
+            c.a = 1f - progress;
+            warningImage.color = c;
+
+            yield return null;
+        }
+
+        c.a = 0f;
+        warningImage.color = c;
+        warningImage.gameObject.SetActive(false);
     }
 
     private void TriggerRedEvent()
