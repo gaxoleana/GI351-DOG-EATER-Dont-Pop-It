@@ -5,6 +5,8 @@ public class PlayerSoundController : MonoBehaviour
 {
     [Header("Sound Clips")]
     [SerializeField] private AudioClip blowSound;
+    [SerializeField] private AudioClip popSound;
+
     private AudioSource audioSource;
     private bool wasHolding = false;
 
@@ -43,5 +45,11 @@ public class PlayerSoundController : MonoBehaviour
         {
             audioSource.Stop();
         }
+    }
+
+    public void PlayPopSound()
+    {
+        StopBlowSound();
+        if (popSound != null) audioSource.PlayOneShot(popSound);
     }
 }
