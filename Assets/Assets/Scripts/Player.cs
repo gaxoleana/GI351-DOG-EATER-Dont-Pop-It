@@ -8,6 +8,13 @@ public class Player : MonoBehaviour
 {
     private enum EventType { None, RedSpam, BlueFreeze }
 
+    [Header("Camera Zoom Settings")]
+    [SerializeField] private CinemachineCamera cinemachineCam;
+    [SerializeField] private float minCamSize = 5f;  // Orthographic size when bubble is at min scale
+    [SerializeField] private float maxCamSize = 8f;  // Orthographic size when bubble is fully blown
+    [SerializeField] private float zoomSpeed = 4f;
+
+
     [Header("Gravity Settings")]
     [SerializeField] private float inflateUpwardForce = 15f;
     [SerializeField] private float normalGravity = 3f;
@@ -81,6 +88,9 @@ public class Player : MonoBehaviour
     private void Update()
     {
         if (isPopped) return;
+
+        UpdateCameraZoom();
+
         if (isPreEventWarning) return; // ระหว่าง Warning ห้ามรับ Input หรือขยับใด ๆ ทั้งสิ้น
 
         bool inputDown = Input.GetMouseButtonDown(0) || Input.GetKeyDown(KeyCode.Space);
@@ -109,7 +119,7 @@ public class Player : MonoBehaviour
                     panicBarFill.fillAmount = (float)currentSpamClicks / requiredSpamClicks;
                 }
 
-                if (bubbleTransform != null) bubbleTransform.localScale *= 1.05f;
+                if (bubbleTransform != null) bubbleTransform.localScale *= 1.01f;
 
                 if (currentSpamClicks >= requiredSpamClicks)
                 {
@@ -274,7 +284,7 @@ public class Player : MonoBehaviour
         isPopped = true;
         currentEvent = EventType.None;
         isHoldingButton = false;
-        isPreEventWarning = false; // กันเคสแตกระหว่าง Warning ค้างไว้ ไม่ให้ Player ถูกล็อกค้าง
+        isPreEventWarning = false;
 
         currentStamina = 0f;
         if (staminaBarFill != null) staminaBarFill.fillAmount = 0f;
@@ -289,6 +299,9 @@ public class Player : MonoBehaviour
         {
             bubbleTransform.gameObject.SetActive(false);
         }
+
+        // Trigger game over immediately on pop
+        Die();
     }
 
     private IEnumerator RandomPanicRoutine()
@@ -400,7 +413,8 @@ public class Player : MonoBehaviour
 
         if (TryGetComponent<CinemachineImpulseSource>(out var impulse))
         {
-            impulse.GenerateImpulse(0.5f);
+            // Force explicit X and Y shake direction
+            impulse.GenerateImpulse(new Vector3(0.5f, 0.5f, 0f));
         }
 
         if (panicBarFill != null) panicBarFill.color = Color.red;
@@ -415,7 +429,8 @@ public class Player : MonoBehaviour
 
         if (TryGetComponent<CinemachineImpulseSource>(out var impulse))
         {
-            impulse.GenerateImpulse(0.5f);
+            // Force explicit X and Y shake direction
+            impulse.GenerateImpulse(new Vector3(0.5f, 0.5f, 0f));
         }
 
         // ล้างความเร็วตกเดิม เพื่อให้เริ่มร่อนลงช้าๆ นุ่มนวล
@@ -434,6 +449,27 @@ public class Player : MonoBehaviour
         if (redVignette != null) redVignette.color = new Color(1f, 0f, 0f, 0f);
         if (blueVignette != null) blueVignette.color = new Color(0f, 0.5f, 1f, 0f);
         if (panicBarBackground != null) panicBarBackground.SetActive(false);
+    }
+
+    private void UpdateCameraZoom()
+    {
+        if (cinemachineCam == null || bubbleTransform == null) return;
+
+        // 1. Get real-time bubble radius (half of current X scale)
+        float bubbleRadius = bubbleTransform.localScale.x * 0.5f;
+
+        // 2. Set camera orthographic size to bubble radius + 10% padding border
+        float targetCamSize = bubbleRadius * 0.15f;
+
+        // 3. Ensure camera never zooms in tighter than your minimum setting
+        targetCamSize = Mathf.Max(minCamSize, targetCamSize);
+
+        // 4. Lerp camera size to match gum expansion smoothly
+        cinemachineCam.Lens.OrthographicSize = Mathf.Lerp(
+            cinemachineCam.Lens.OrthographicSize,
+            targetCamSize,
+            Time.deltaTime * zoomSpeed
+        );
     }
 
     private void OnTriggerEnter2D(Collider2D other)

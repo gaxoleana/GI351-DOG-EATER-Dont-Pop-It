@@ -1113,6 +1113,7 @@ GameObject:
   - component: {fileID: 418234947}
   - component: {fileID: 418234949}
   - component: {fileID: 418234950}
+  - component: {fileID: 418234951}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -1235,6 +1236,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 517a6ce9b67d35d44911aed0aa5a5854, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BubbleGumPlayer
+  cinemachineCam: {fileID: 445594285}
+  minCamSize: 5
+  maxCamSize: 12
+  zoomSpeed: 5
   inflateUpwardForce: 15
   normalGravity: 3
   inflatedGravity: 0.5
@@ -1246,8 +1251,8 @@ MonoBehaviour:
   staminaBarFill: {fileID: 758023967}
   bubbleTransform: {fileID: 1054454690}
   minBubbleScale: {x: 3, y: 3, z: 1}
-  maxBubbleScale: {x: 100, y: 100, z: 1}
-  scaleSpeed: 0.25
+  maxBubbleScale: {x: 500, y: 500, z: 1}
+  scaleSpeed: 0.025
   redVignette: {fileID: 1553242530}
   blueVignette: {fileID: 2125261172}
   panicBarBackground: {fileID: 1656357891}
@@ -1259,8 +1264,8 @@ MonoBehaviour:
   blueFreezeDuration: 2.5
   redWarningImage: {fileID: 1590795976}
   blueWarningImage: {fileID: 462620366}
-  warningStartAnchoredPos: {x: -500, y: 0}
-  warningEndAnchoredPos: {x: 650, y: 0}
+  warningStartAnchoredPos: {x: -500, y: -200}
+  warningEndAnchoredPos: {x: 650, y: -200}
   warningFadeInDuration: 0.4
   warningHoldDuration: 1.5
   warningFadeOutDuration: 0.4
@@ -1451,6 +1456,59 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &418234951
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 418234941}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 180ecf9b41d478f468eb3e9083753217, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Cinemachine::Unity.Cinemachine.CinemachineImpulseSource
+  ImpulseDefinition:
+    ImpulseChannel: 1
+    ImpulseShape: 4
+    CustomImpulseShape:
+      serializedVersion: 2
+      m_Curve: []
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    ImpulseDuration: 2
+    ImpulseType: 0
+    DissipationRate: 0.25
+    RawSignal: {fileID: 0}
+    AmplitudeGain: 1
+    FrequencyGain: 1
+    RepeatMode: 0
+    Randomize: 1
+    TimeEnvelope:
+      AttackShape:
+        serializedVersion: 2
+        m_Curve: []
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+      DecayShape:
+        serializedVersion: 2
+        m_Curve: []
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+      AttackTime: 0
+      SustainTime: 0.2
+      DecayTime: 0.7
+      ScaleWithImpact: 1
+      HoldForever: 0
+    ImpactRadius: 100
+    DirectionMode: 0
+    DissipationMode: 2
+    DissipationDistance: 100
+    PropagationSpeed: 343
+  DefaultVelocity: {x: 0.5, y: 0.5, z: 0}
 --- !u!1 &436803010
 GameObject:
   m_ObjectHideFlags: 0
@@ -1537,7 +1595,7 @@ GameObject:
   - component: {fileID: 445594286}
   - component: {fileID: 445594285}
   - component: {fileID: 445594284}
-  - component: {fileID: 445594287}
+  - component: {fileID: 445594288}
   m_Layer: 0
   m_Name: CinemachineCamera
   m_TagString: Untagged
@@ -1634,7 +1692,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &445594287
+--- !u!114 &445594288
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1643,50 +1701,21 @@ MonoBehaviour:
   m_GameObject: {fileID: 445594283}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 180ecf9b41d478f468eb3e9083753217, type: 3}
+  m_Script: {fileID: 11500000, guid: 00b2d199b96b516448144ab30fb26aed, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Unity.Cinemachine::Unity.Cinemachine.CinemachineImpulseSource
-  ImpulseDefinition:
-    ImpulseChannel: 1
-    ImpulseShape: 2
-    CustomImpulseShape:
-      serializedVersion: 2
-      m_Curve: []
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
-    ImpulseDuration: 0.2
-    ImpulseType: 0
-    DissipationRate: 0.25
-    RawSignal: {fileID: 0}
+  m_EditorClassIdentifier: Unity.Cinemachine::Unity.Cinemachine.CinemachineImpulseListener
+  ApplyAfter: 2
+  ChannelMask: 1
+  Gain: 1
+  Use2DDistance: 0
+  UseCameraSpace: 1
+  SignalCombinationMode: 0
+  ReactionSettings:
+    m_SecondaryNoise: {fileID: 0}
     AmplitudeGain: 1
     FrequencyGain: 1
-    RepeatMode: 0
-    Randomize: 1
-    TimeEnvelope:
-      AttackShape:
-        serializedVersion: 2
-        m_Curve: []
-        m_PreInfinity: 2
-        m_PostInfinity: 2
-        m_RotationOrder: 4
-      DecayShape:
-        serializedVersion: 2
-        m_Curve: []
-        m_PreInfinity: 2
-        m_PostInfinity: 2
-        m_RotationOrder: 4
-      AttackTime: 0
-      SustainTime: 0.2
-      DecayTime: 0.7
-      ScaleWithImpact: 1
-      HoldForever: 0
-    ImpactRadius: 100
-    DirectionMode: 0
-    DissipationMode: 2
-    DissipationDistance: 100
-    PropagationSpeed: 343
-  DefaultVelocity: {x: 0, y: -1, z: 0}
+    Duration: 1
+    m_NoiseOffsets: {x: 0, y: 0, z: 0}
 --- !u!1 &462620364
 GameObject:
   m_ObjectHideFlags: 0
@@ -1943,13 +1972,13 @@ MonoBehaviour:
   - {fileID: 2419614164082855937, guid: 526ceb768bc80e74fa07c39d307fc52f, type: 3}
   - {fileID: 5621747719825532390, guid: ddbd9cb707dceb34c901854b95c8b3c5, type: 3}
   - {fileID: 1982985394297909320, guid: 8e6650a7871cbca418ef2def442c1889, type: 3}
-  spawnYDistance: 15
-  spawnIntervalY: 8
-  destroyYDistance: 20
-  minCloudsPerLevel: 2
-  maxCloudsPerLevel: 4
-  minX: -12
-  maxX: 12
+  spawnYDistance: 50
+  spawnIntervalY: 7
+  destroyYDistance: 200
+  minCloudsPerLevel: 10
+  maxCloudsPerLevel: 40
+  minX: -100
+  maxX: 100
 --- !u!1 &499951472
 GameObject:
   m_ObjectHideFlags: 0
@@ -2059,7 +2088,6 @@ GameObject:
   - component: {fileID: 519420029}
   - component: {fileID: 519420030}
   - component: {fileID: 519420033}
-  - component: {fileID: 519420034}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -2129,7 +2157,7 @@ Camera:
   m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 2
-  m_BackGroundColor: {r: 0.7686275, g: 0.7686275, b: 0.7686275, a: 0}
+  m_BackGroundColor: {r: 0.6117647, g: 0.76470596, b: 0.96470594, a: 0}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
   m_FOVAxisMode: 0
@@ -2218,30 +2246,6 @@ MonoBehaviour:
       m_PostInfinity: 2
       m_RotationOrder: 4
   CustomBlends: {fileID: 0}
---- !u!114 &519420034
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 519420028}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 00b2d199b96b516448144ab30fb26aed, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Unity.Cinemachine::Unity.Cinemachine.CinemachineImpulseListener
-  ApplyAfter: 2
-  ChannelMask: 1
-  Gain: 1
-  Use2DDistance: 0
-  UseCameraSpace: 1
-  SignalCombinationMode: 0
-  ReactionSettings:
-    m_SecondaryNoise: {fileID: 0}
-    AmplitudeGain: 1
-    FrequencyGain: 1
-    Duration: 1
-    m_NoiseOffsets: {x: 0, y: 0, z: 0}
 --- !u!1 &544424548
 GameObject:
   m_ObjectHideFlags: 0
