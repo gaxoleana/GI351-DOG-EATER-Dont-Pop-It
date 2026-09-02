@@ -3,7 +3,7 @@ using UnityEngine.SceneManagement;
 
 public class ButtonManager : MonoBehaviour
 {
-    // เรียกใช้จาก OnClick() ของ Button เพื่อโหลด GameScene
+    // เรียกใช้จาก OnClick() ของ Button เพื่อโหลด Scene ที่ต้องการ
     public void LoadGameScene()
     {
         SceneManager.LoadScene("GameScene");
@@ -38,7 +38,7 @@ public class ButtonManager : MonoBehaviour
     }
     */
 
-    // ปิดเกม (ทำงานเฉพาะตอน build จริง ใน Editor จะไม่ปิด)
+    // ปิดเกม (ทำงานเฉพาะตอน build จริง ใน Editor จะไม่ปิด) 
     public void QuitGame()
     {
         Debug.Log("Quit Requested.");
