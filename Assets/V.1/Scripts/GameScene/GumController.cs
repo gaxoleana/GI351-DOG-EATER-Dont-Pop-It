@@ -2,6 +2,19 @@ using UnityEngine;
 using Unity.Cinemachine;
 
 /// <summary>
+/// จุดความสูงหนึ่งจุดที่จะขยาย DeadZone threshold — กำหนดเป็นค่าตายตัว ไม่ใช่สูตรต่อเนื่อง
+/// </summary>
+[System.Serializable]
+public struct DeadZoneMilestone
+{
+    [Tooltip("ความสูง (เมตร) ที่จะ trigger การขยาย")]
+    public float altitude;
+
+    [Tooltip("บวกเพิ่มเข้า threshold เท่าไหร่ตอนถึงจุดนี้")]
+    public float thresholdIncrease;
+}
+
+/// <summary>
 /// จัดการขนาดหมากฝรั่ง (gum), DeadZone threshold ที่ขยายขึ้นตามความสูง,
 /// และ Pop/Reset cycle. ตัวนี้เป็น "หัวใจ" ของ core loop ทั้งหมด
 /// </summary>
@@ -24,14 +37,17 @@ public class GumController : MonoBehaviour
     [Tooltip("อัตราการยุบของ gum ต่อวินาทีตอนปล่อย")]
     public float shrinkRate = 1.5f;
 
-    [Header("DeadZone Scaling (ยิ่งสูงยิ่งขยาย)")]
-    [Tooltip("ทุกกี่เมตร ขยับ threshold หนึ่ง step")]
-    public float altitudeStep = 600f;
+    [Header("DeadZone Scaling (ขยายตามระดับความสูงที่กำหนดตายตัว)")]
+    [Tooltip("รายการจุดความสูงที่จะขยาย threshold — ถึงจุดไหนก็บวกเพิ่มตามนั้น หลังจุดสุดท้ายจะไม่ขยายอีก")]
+    public DeadZoneMilestone[] milestones = new DeadZoneMilestone[]
+    {
+        new DeadZoneMilestone { altitude = 400f, thresholdIncrease = 0.2f },
+        new DeadZoneMilestone { altitude = 600f, thresholdIncrease = 0.2f },
+        new DeadZoneMilestone { altitude = 800f, thresholdIncrease = 0.2f },
+        new DeadZoneMilestone { altitude = 1000f, thresholdIncrease = 0.2f },
+    };
 
-    [Tooltip("ขยาย threshold เพิ่มกี่หน่วยต่อ step (linear)")]
-    public float growthPerStep = 0.2f;
-
-    [Tooltip("เพดานสูงสุดของ threshold กันไม่ให้ balance พัง")]
+    [Tooltip("เพดานสูงสุดของ threshold กันไว้เผื่อ (ปกติ milestone ท้ายสุดจะเป็นตัวจบเองอยู่แล้ว)")]
     public float maxDeadZoneThreshold = 3.0f;
 
     [Header("Timing")]
@@ -275,12 +291,19 @@ public class GumController : MonoBehaviour
     private void UpdateDeadZoneThreshold()
     {
         float altitude = GetCurrentAltitude();
-        int stepsPassed = Mathf.FloorToInt(altitude / altitudeStep);
+        float grown = baseDeadZoneThreshold;
 
-        float grown = baseDeadZoneThreshold + (stepsPassed * growthPerStep);
+        // บวกเพิ่มทีละ milestone ที่ altitude ปัจจุบันผ่านมาแล้ว
+        // หลัง milestone สุดท้าย (1000m ตาม default) จะไม่มีอะไรให้บวกเพิ่มอีก = หยุดขยายเอง
+        foreach (var milestone in milestones)
+        {
+            if (altitude >= milestone.altitude)
+            {
+                grown += milestone.thresholdIncrease;
+            }
+        }
+
         currentDeadZoneThreshold = Mathf.Min(grown, maxDeadZoneThreshold);
-
-        
     }
 
     /// <summary>เรียกจาก PlayerController ตอนกดเป่า (เฉพาะตอน state = Normal)</summary>
@@ -297,12 +320,31 @@ public class GumController : MonoBehaviour
         currentSize = Mathf.Max(currentSize - shrinkRate * deltaTime, 0f);
     }
 
+    /// <summary>
+    /// เพิ่มขนาดหมากฝรั่งแบบ Fix Value ต่อการกด 1 ครั้ง (ใช้กับ Red Event)
+    /// ป้องกันไม่ให้เกิน Threshold ปัจจุบัน
+    /// </summary>
+    public void AddSize(float amount)
+    {
+        if (currentState != GumState.Normal) return;
+
+        // ขยายขนาดขึ้นแบบ Fix Scale แต่ไม่เกิน Threshold ปัจจุบัน
+        currentSize = Mathf.Min(currentSize + amount, currentDeadZoneThreshold * 0.98f);
+    }
+
     private void Pop()
     {
         currentState = GumState.Popped;
         stateTimer = 0f;
         FirePopShake();
         OnPop?.Invoke();
+    }
+
+    /// <summary>บังคับให้หมากฝรั่งแตกทันที (ใช้ตอนชน Obstacle)</summary>
+    public void ForcePop()
+    {
+        if (currentState == GumState.Popped || currentState == GumState.Dazed) return;
+        Pop();
     }
 
     private void ResetGum()

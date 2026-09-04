@@ -17,6 +17,13 @@ public class PlayerController : MonoBehaviour
     [Tooltip("แรงยกสูงสุด (คูณ) ตอน gum ใหญ่เต็มที่ เทียบกับ base")]
     public float liftMultiplierMax = 2.5f;
 
+    [Header("Threshold Growth Speed Boost")]
+    [Tooltip("เปิด/ปิด — ให้ threshold ที่ขยายขึ้น (ผ่าน milestone) ทำให้ลอยเร็วขึ้นด้วย")]
+    public bool scaleLiftWithThresholdGrowth = true;
+
+    [Tooltip("เพดานตัวคูณแรงยกที่มาจาก threshold growth (กันไม่ให้เร็วทะลุจนคุมไม่ได้ตอน threshold โตสุด)")]
+    public float maxThresholdSpeedBoost = 1.8f;
+
     [Tooltip("แรงโน้มถ่วงตอนไม่ได้เป่า / ตอนมึนงง / ตอนแตก")]
     public float gravity = 9.8f;
 
@@ -114,8 +121,21 @@ public class PlayerController : MonoBehaviour
 
         if (canLift)
         {
-            float sizeRatio = gum.GetSizeRatio(); // 0-1
+            float sizeRatio = gum.GetSizeRatio(); // 0-1 (สัดส่วนที่เป่าไปแล้วเทียบกับ threshold ตอนนี้)
             float liftMultiplier = Mathf.Lerp(1f, liftMultiplierMax, sizeRatio);
+
+            if (scaleLiftWithThresholdGrowth)
+            {
+                // threshold ยิ่งโต (ผ่าน milestone) ยิ่งลอยเร็วขึ้นด้วย ไม่ใช่แค่ gum ดูใหญ่ขึ้นเฉย ๆ
+                // ใช้ CurrentMaxVisualScale / maxVisualScale เพราะเท่ากับ currentDeadZoneThreshold / baseDeadZoneThreshold พอดี
+                float thresholdGrowthFactor = gum.maxVisualScale > 0f
+                    ? gum.CurrentMaxVisualScale / gum.maxVisualScale
+                    : 1f;
+
+                thresholdGrowthFactor = Mathf.Min(thresholdGrowthFactor, maxThresholdSpeedBoost);
+                liftMultiplier *= thresholdGrowthFactor;
+            }
+
             float targetVelocityY = baseLiftForce * liftMultiplier;
 
             // ไล่ velocity เข้าหาเป้าหมายทีละนิด แทนการ snap ทันที
@@ -130,6 +150,17 @@ public class PlayerController : MonoBehaviour
         }
 
         rb.linearVelocity = velocity;
+    }
+
+    /// <summary>
+    /// สั่งแรงยกตัวละครสั้น ๆ ตอนกดรัวใน Red Event เพื่อให้ตัวลอยขึ้นสู้แรงโน้มถ่วงได้ปกติ
+    /// </summary>
+    public void ApplyMashImpulse(float impulseForce = 3f)
+    {
+        Vector2 vel = rb.linearVelocity;
+        // ปรับความเร็ว Y ขึ้นทันที ยิ่งกดรัวยิ่งไต่ระดับความสูงได้สม่ำเสมอ
+        vel.y = Mathf.Max(vel.y + impulseForce, baseLiftForce);
+        rb.linearVelocity = vel;
     }
 
     // --- เรียกจากระบบ Obstacle ---
