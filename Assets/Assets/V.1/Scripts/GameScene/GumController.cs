@@ -160,6 +160,15 @@ public class GumController : MonoBehaviour
         }
     }
 
+    public float CurrentMaxVisualScale
+    {
+        get
+        {
+            if (baseDeadZoneThreshold <= 0f) return maxVisualScale;
+            return maxVisualScale * (currentDeadZoneThreshold / baseDeadZoneThreshold);
+        }
+    }
+
     /// <summary>
     /// scale sprite ตาม currentSize เทียบกับ threshold ปัจจุบัน (0 = ยุบสุด, 1 = ใกล้แตก)
     /// ตอน Popped จะ scale เหลือ minVisualScale ทันทีให้เห็นว่าแตกแล้ว
@@ -179,7 +188,7 @@ public class GumController : MonoBehaviour
         {
             float targetScale = currentState == GumState.Popped
                 ? minVisualScale
-                : Mathf.Lerp(minVisualScale, maxVisualScale, sizeRatio) + pulse;
+                : Mathf.Lerp(minVisualScale, CurrentMaxVisualScale, sizeRatio) + pulse;
 
             gumVisual.localScale = Vector3.one * targetScale;
         }
@@ -198,7 +207,7 @@ public class GumController : MonoBehaviour
         // ขนาดวงแหวน = ตามขนาด gum ปัจจุบัน + ระยะห่างคงที่ (ringSizeMultiplier)
         float gumScale = currentState == GumState.Popped
             ? minVisualScale
-            : Mathf.Lerp(minVisualScale, maxVisualScale, sizeRatio);
+            : Mathf.Lerp(minVisualScale, CurrentMaxVisualScale, sizeRatio);
         ringVisual.localScale = Vector3.one * (gumScale * ringSizeMultiplier + pulse);
 
         if (ringRenderer == null) return;

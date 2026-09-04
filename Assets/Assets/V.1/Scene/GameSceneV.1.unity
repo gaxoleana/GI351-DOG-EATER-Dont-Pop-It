@@ -632,8 +632,8 @@ MonoBehaviour:
   baseDeadZoneThreshold: 1
   growthRate: 0.6
   shrinkRate: 1
-  altitudeStep: 100
-  growthPerStep: 0.5
+  altitudeStep: 400
+  growthPerStep: 0.2
   maxDeadZoneThreshold: 3
   popRecoveryTime: 2
   dazedDuration: 0.7
