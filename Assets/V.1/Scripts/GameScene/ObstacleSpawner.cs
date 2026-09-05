@@ -193,12 +193,6 @@ public class ObstacleSpawner : MonoBehaviour
             {
                 obs.moveDirection = Vector2.left; // วิ่งตามแนวราบปกติ
             }
-
-            SpriteRenderer sr = obsObj.GetComponent<SpriteRenderer>();
-            if (sr != null)
-            {
-                sr.flipX = true;
-            }
         }
     }
 }
