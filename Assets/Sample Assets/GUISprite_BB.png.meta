@@ -1,0 +1,715 @@
+fileFormatVersion: 2
+guid: a1cb71006f298a64895c0c72354fedcf
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: 1501856072247396040
+    second: GUISprite_BB_0
+  - first:
+      213: 7317887533510651957
+    second: GUISprite_BB_1
+  - first:
+      213: -2261639730479180174
+    second: GUISprite_BB_2
+  - first:
+      213: -4819141360967157572
+    second: GUISprite_BB_3
+  - first:
+      213: -1130793129646886588
+    second: GUISprite_BB_4
+  - first:
+      213: -5076956174866654624
+    second: GUISprite_BB_5
+  - first:
+      213: 8508192668183300883
+    second: GUISprite_BB_6
+  - first:
+      213: -6008715647975197568
+    second: GUISprite_BB_7
+  - first:
+      213: 7977818995553514210
+    second: GUISprite_BB_8
+  - first:
+      213: -2174160079916312964
+    second: GUISprite_BB_9
+  - first:
+      213: 2809290080525552086
+    second: GUISprite_BB_10
+  - first:
+      213: -1744824841848947859
+    second: GUISprite_BB_11
+  - first:
+      213: 6645592399694236204
+    second: GUISprite_BB_12
+  - first:
+      213: 7590436513829331992
+    second: GUISprite_BB_13
+  - first:
+      213: 6574385842966290945
+    second: GUISprite_BB_14
+  - first:
+      213: 6564169909407490137
+    second: GUISprite_BB_15
+  - first:
+      213: -6176855066081832444
+    second: GUISprite_BB_16
+  - first:
+      213: -7071337204528533277
+    second: GUISprite_BB_17
+  - first:
+      213: -5451025743651727574
+    second: GUISprite_BB_18
+  - first:
+      213: -1164516488993638098
+    second: GUISprite_BB_19
+  - first:
+      213: -3589634603496823755
+    second: GUISprite_BB_20
+  - first:
+      213: 4208267381776181998
+    second: GUISprite_BB_21
+  - first:
+      213: -1089485462821675898
+    second: GUISprite_BB_22
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 0
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: GUISprite_BB_0
+      rect:
+        serializedVersion: 2
+        x: 15
+        y: 191
+        width: 66
+        height: 18
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 8c6c11af32aa7d410800000000000000
+      internalID: 1501856072247396040
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: GUISprite_BB_1
+      rect:
+        serializedVersion: 2
+        x: 95
+        y: 159
+        width: 66
+        height: 50
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 530792d90fb5e8560800000000000000
+      internalID: 7317887533510651957
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: GUISprite_BB_2
+      rect:
+        serializedVersion: 2
+        x: 179
+        y: 143
+        width: 11
+        height: 66
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 276d0e6d5aa0d90e0800000000000000
+      internalID: -2261639730479180174
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: GUISprite_BB_3
+      rect:
+        serializedVersion: 2
+        x: 195
+        y: 143
+        width: 11
+        height: 66
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: cb8f8211778fe1db0800000000000000
+      internalID: -4819141360967157572
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: GUISprite_BB_4
+      rect:
+        serializedVersion: 2
+        x: 225
+        y: 161
+        width: 45
+        height: 45
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 441f1f8c3ad9e40f0800000000000000
+      internalID: -1130793129646886588
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: GUISprite_BB_5
+      rect:
+        serializedVersion: 2
+        x: 15
+        y: 178
+        width: 66
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 06ad8d002470b89b0800000000000000
+      internalID: -5076956174866654624
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: GUISprite_BB_6
+      rect:
+        serializedVersion: 2
+        x: 15
+        y: 163
+        width: 66
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 31b06a3472c231670800000000000000
+      internalID: 8508192668183300883
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: GUISprite_BB_7
+      rect:
+        serializedVersion: 2
+        x: 17
+        y: 147
+        width: 61
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0847b1624f0cc9ca0800000000000000
+      internalID: -6008715647975197568
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: GUISprite_BB_8
+      rect:
+        serializedVersion: 2
+        x: 95
+        y: 145
+        width: 66
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2e2b450bb18e6be60800000000000000
+      internalID: 7977818995553514210
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: GUISprite_BB_9
+      rect:
+        serializedVersion: 2
+        x: 17
+        y: 131
+        width: 61
+        height: 11
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c76d0cf2de4d3d1e0800000000000000
+      internalID: -2174160079916312964
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: GUISprite_BB_10
+      rect:
+        serializedVersion: 2
+        x: 95
+        y: 130
+        width: 66
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 6d901c8a17a9cf620800000000000000
+      internalID: 2809290080525552086
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: GUISprite_BB_11
+      rect:
+        serializedVersion: 2
+        x: 179
+        y: 84
+        width: 11
+        height: 57
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d6bf0520d0329c7e0800000000000000
+      internalID: -1744824841848947859
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: GUISprite_BB_12
+      rect:
+        serializedVersion: 2
+        x: 195
+        y: 84
+        width: 11
+        height: 57
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c2a8fc1e313e93c50800000000000000
+      internalID: 6645592399694236204
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: GUISprite_BB_13
+      rect:
+        serializedVersion: 2
+        x: 223
+        y: 127
+        width: 66
+        height: 17
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 814a3f02bc5a65960800000000000000
+      internalID: 7590436513829331992
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: GUISprite_BB_14
+      rect:
+        serializedVersion: 2
+        x: 15
+        y: 95
+        width: 66
+        height: 34
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 102ec527719ec3b50800000000000000
+      internalID: 6574385842966290945
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: GUISprite_BB_15
+      rect:
+        serializedVersion: 2
+        x: 96
+        y: 95
+        width: 64
+        height: 34
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 950aa8f01cd981b50800000000000000
+      internalID: 6564169909407490137
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: GUISprite_BB_16
+      rect:
+        serializedVersion: 2
+        x: 223
+        y: 111
+        width: 74
+        height: 12
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 402de153b07674aa0800000000000000
+      internalID: -6176855066081832444
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: GUISprite_BB_17
+      rect:
+        serializedVersion: 2
+        x: 255
+        y: 115
+        width: 10
+        height: 10
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 3e0b21d27409ddd90800000000000000
+      internalID: -7071337204528533277
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: GUISprite_BB_18
+      rect:
+        serializedVersion: 2
+        x: 224
+        y: 66
+        width: 80
+        height: 14
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a27112887f01a54b0800000000000000
+      internalID: -5451025743651727574
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: GUISprite_BB_19
+      rect:
+        serializedVersion: 2
+        x: 257
+        y: 80
+        width: 14
+        height: 14
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: e29f2725c6ec6dfe0800000000000000
+      internalID: -1164516488993638098
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: GUISprite_BB_20
+      rect:
+        serializedVersion: 2
+        x: 21
+        y: 5
+        width: 70
+        height: 70
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5342f19c85e0f2ec0800000000000000
+      internalID: -3589634603496823755
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: GUISprite_BB_21
+      rect:
+        serializedVersion: 2
+        x: 116
+        y: 15
+        width: 56
+        height: 63
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: eeae1aa23e4c66a30800000000000000
+      internalID: 4208267381776181998
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: GUISprite_BB_22
+      rect:
+        serializedVersion: 2
+        x: 194
+        y: 19
+        width: 75
+        height: 40
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 68cdf807ebe51e0f0800000000000000
+      internalID: -1089485462821675898
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      GUISprite_BB_0: 1501856072247396040
+      GUISprite_BB_1: 7317887533510651957
+      GUISprite_BB_10: 2809290080525552086
+      GUISprite_BB_11: -1744824841848947859
+      GUISprite_BB_12: 6645592399694236204
+      GUISprite_BB_13: 7590436513829331992
+      GUISprite_BB_14: 6574385842966290945
+      GUISprite_BB_15: 6564169909407490137
+      GUISprite_BB_16: -6176855066081832444
+      GUISprite_BB_17: -7071337204528533277
+      GUISprite_BB_18: -5451025743651727574
+      GUISprite_BB_19: -1164516488993638098
+      GUISprite_BB_2: -2261639730479180174
+      GUISprite_BB_20: -3589634603496823755
+      GUISprite_BB_21: 4208267381776181998
+      GUISprite_BB_22: -1089485462821675898
+      GUISprite_BB_3: -4819141360967157572
+      GUISprite_BB_4: -1130793129646886588
+      GUISprite_BB_5: -5076956174866654624
+      GUISprite_BB_6: 8508192668183300883
+      GUISprite_BB_7: -6008715647975197568
+      GUISprite_BB_8: 7977818995553514210
+      GUISprite_BB_9: -2174160079916312964
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

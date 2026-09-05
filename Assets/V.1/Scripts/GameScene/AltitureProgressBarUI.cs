@@ -23,8 +23,8 @@ public class AltitudeProgressBarUI : MonoBehaviour
     public float startYOffset = 0f;
 
     [Header("UI Components")]
-    [Tooltip("UI Slider แนวตั้ง (Bottom To Top)")]
-    public Slider progressSlider;
+    [Tooltip("Image ที่ตั้ง Image Type = Filled (แทน Slider) ใช้ fillAmount แทน value")]
+    public Image progressFillImage;
 
     [Tooltip("Icon แสดงตำแหน่งตัวละครที่จะวิ่งตามความสูงบน UI")]
     public RectTransform playerIcon;
@@ -35,6 +35,26 @@ public class AltitudeProgressBarUI : MonoBehaviour
 
     [Tooltip("Text แสดงระยะความสูงปัจจุบัน")]
     public TextMeshProUGUI altitudeText;
+
+    [Header("Icon Rewards")]
+    [Tooltip("ลาก GameObject bird / plane / alien ที่ 'ปิด' อยู่ตอนแรก (ตัวที่จะซ่อนเมื่อปลดล็อก)")]
+    public GameObject birdOff;
+    public GameObject planeOff;
+    public GameObject alienOff;
+
+    [Tooltip("ลาก GameObject bird (1) / plane (1) / alien (1) ที่จะ 'เปิด' แทนตอนปลดล็อก")]
+    public GameObject birdOn;
+    public GameObject planeOn;
+    public GameObject alienOn;
+
+    [Tooltip("ระดับความสูง (หน่วย km ตามที่โชว์บนจอ) ที่จะปลดล็อกแต่ละตัว")]
+    public float birdUnlockKm = 1f;
+    public float planeUnlockKm = 10f;
+    public float alienUnlockKm = 20f;
+
+    private bool birdUnlocked = false;
+    private bool planeUnlocked = false;
+    private bool alienUnlocked = false;
 
     [Header("Events")]
     [Tooltip("เหตุการณ์ที่จะทำงานเมื่อถึงเส้นชัย 30km")]
@@ -51,11 +71,10 @@ public class AltitudeProgressBarUI : MonoBehaviour
             if (player != null) playerTransform = player.transform;
         }
 
-        if (progressSlider != null)
-        {
-            progressSlider.minValue = 0f;
-            progressSlider.maxValue = 1f;
-        }
+        // ตั้งสถานะเริ่มต้นให้แน่ใจว่า *Off เปิด, *On ปิด
+        SetIconState(birdOff, birdOn, false);
+        SetIconState(planeOff, planeOn, false);
+        SetIconState(alienOff, alienOn, false);
     }
 
     void Update()
@@ -63,15 +82,15 @@ public class AltitudeProgressBarUI : MonoBehaviour
         if (playerTransform == null) return;
 
         // 1. คำนวณความสูงปัจจุบันโดยอิงจากตำแหน่ง Y ของ Player
-        float currentAltitude = Mathf.Max(0f, playerTransform.position.y - startYOffset); // แปลงจากเมตรเป็นกิโลเมตร
+        float currentAltitude = Mathf.Max(0f, playerTransform.position.y - startYOffset);
 
         // 2. คำนวณ Ratio ความก้าวหน้า (0.0 ถึง 1.0)
         float progressRatio = Mathf.Clamp01((currentAltitude - minAltitude) / (maxAltitude - minAltitude));
 
-        // 3. อัปเดตค่า UI Slider
-        if (progressSlider != null)
+        // 3. อัปเดตค่า Image fillAmount แทน Slider value
+        if (progressFillImage != null)
         {
-            progressSlider.value = progressRatio;
+            progressFillImage.fillAmount = progressRatio;
         }
 
         // 4. ขยับ Icon ตัวละครตามความสูงบน UI
@@ -83,12 +102,30 @@ public class AltitudeProgressBarUI : MonoBehaviour
         }
 
         // 5. อัปเดตข้อความแสดงระยะทาง
+        float currentKm = currentAltitude / 100f;
         if (altitudeText != null)
         {
-            altitudeText.text = $"{Mathf.FloorToInt(currentAltitude/100):N0}km / {Mathf.FloorToInt(maxAltitude/100):N0}km";
+            altitudeText.text = $"{Mathf.FloorToInt(currentAltitude / 100):N0}km / {Mathf.FloorToInt(maxAltitude / 100):N0}km";
         }
 
-        // 6. เช็กเงื่อนไขเข้าเส้นชัย (30km)
+        // 5.5 เช็กปลดล็อก icon ตามระดับความสูง
+        if (!birdUnlocked && currentKm >= birdUnlockKm)
+        {
+            birdUnlocked = true;
+            SetIconState(birdOff, birdOn, true);
+        }
+        if (!planeUnlocked && currentKm >= planeUnlockKm)
+        {
+            planeUnlocked = true;
+            SetIconState(planeOff, planeOn, true);
+        }
+        if (!alienUnlocked && currentKm >= alienUnlockKm)
+        {
+            alienUnlocked = true;
+            SetIconState(alienOff, alienOn, true);
+        }
+
+        // 6. เช็กเงื่อนไขเข้าเส้นชัย
         if (progressRatio >= 1.0f && !hasReachedFinishLine)
         {
             hasReachedFinishLine = true;
@@ -96,11 +133,15 @@ public class AltitudeProgressBarUI : MonoBehaviour
         }
     }
 
+    private void SetIconState(GameObject offObj, GameObject onObj, bool unlocked)
+    {
+        if (offObj != null) offObj.SetActive(!unlocked);
+        if (onObj != null) onObj.SetActive(unlocked);
+    }
+
     private void TriggerFinishLine()
     {
         Debug.Log("🎉 บรรลุความสูง 30km เข้าเส้นชัยแล้ว!");
         OnReachFinishLine?.Invoke();
-
-        // สามารถใส่ Logic จบเกม เช่น ขึ้นหน้าต่าง Win UI หรือหยุดเกมได้ที่นี่
     }
 }
