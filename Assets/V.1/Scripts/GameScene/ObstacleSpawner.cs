@@ -16,6 +16,13 @@ public class ObstacleSpawner : MonoBehaviour
     public GameObject birdPrefab;
     public GameObject planePrefab;
 
+    [Header("Boss")]
+    [Tooltip("Prefab ของ AlienBoss (ต้องมี component AlienBoss ติดอยู่) — จะ spawn ครั้งเดียวตอนเข้า bossAltitude")]
+    public GameObject alienBossPrefab;
+
+    [Tooltip("ตำแหน่ง spawn ของ Alien Boss (ถ้าไม่ใส่ จะ spawn ที่ตำแหน่งผู้เล่นบวก offset เริ่มต้นของตัว Alien เอง)")]
+    public Transform bossSpawnPoint;
+
     [Header("Altitude Thresholds")]
     public float birdMinAltitude = 100f;
     public float planeMinAltitude = 1000f;
@@ -69,7 +76,7 @@ public class ObstacleSpawner : MonoBehaviour
             {
                 isBossPhase = true;
                 Debug.Log("⚠️ เข้าสู่พื้นที่ Alien Boss Fight (2000m+)");
-                // สามารถสั่ง Trigger เริ่ม Boss Fight ตรงนี้ได้ในอนาคต
+                SpawnAlienBoss();
             }
             return;
         }
@@ -93,6 +100,31 @@ public class ObstacleSpawner : MonoBehaviour
 
         float currentInterval = Mathf.Lerp(maxSpawnInterval, minSpawnInterval, progressRatio);
         nextSpawnTimer = currentInterval;
+    }
+
+    /// <summary>
+    /// สปอว์น Alien Boss ครั้งเดียวตอนเข้า bossAltitude — ตัวมันเองจะไล่ตามผู้เล่นเองผ่าน AlienBoss.cs
+    /// ไม่ต้องมี logic ดูแลต่อจากตรงนี้อีก
+    /// </summary>
+    private void SpawnAlienBoss()
+    {
+        if (alienBossPrefab == null)
+        {
+            Debug.LogWarning("[ObstacleSpawner] ยังไม่ได้ใส่ Alien Boss Prefab");
+            return;
+        }
+
+        Vector3 spawnPos = bossSpawnPoint != null
+            ? bossSpawnPoint.position
+            : playerTransform.position; // AlienBoss จะขยับตัวเองไปตำแหน่งที่ถูกต้องในเฟรมแรกอยู่แล้ว
+
+        GameObject bossObj = Instantiate(alienBossPrefab, spawnPos, Quaternion.identity);
+
+        AlienBoss boss = bossObj.GetComponent<AlienBoss>();
+        if (boss != null && boss.playerTransform == null)
+        {
+            boss.playerTransform = playerTransform;
+        }
     }
 
     private IEnumerator SpawnObstacleSequence(float currentAltitude)
