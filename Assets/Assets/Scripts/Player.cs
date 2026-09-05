@@ -11,7 +11,7 @@ public class Player : MonoBehaviour
     [Header("Camera Zoom Settings")]
     [SerializeField] private CinemachineCamera cinemachineCam;
     [SerializeField] private float minCamSize = 5f;  // Orthographic size when bubble is at min scale
-    [SerializeField] private float maxCamSize = 8f;  // Orthographic size when bubble is fully blown
+    //[SerializeField] private float maxCamSize = 8f;  // Orthographic size when bubble is fully blown
     [SerializeField] private float zoomSpeed = 4f;
 
 
