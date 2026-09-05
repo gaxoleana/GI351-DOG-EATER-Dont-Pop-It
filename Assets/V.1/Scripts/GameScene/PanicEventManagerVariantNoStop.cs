@@ -27,6 +27,9 @@ public class PanicEventManagerVariantNoStop : MonoBehaviour
     [Header("References")]
     public PlayerController player;
     public GumController gum;
+    [Header("Audio")]
+    [Tooltip("ลาก AudioSource ของ Panic Event Warning มาใส่")]
+    public AudioSource warningAudioSource;
 
     [Header("World Overlay Settings (2D Sprite Dimmer)")]
     [Tooltip("GameObject สี่เหลี่ยมสีดำโปร่งแสงใน World Space")]
@@ -220,6 +223,12 @@ public class PanicEventManagerVariantNoStop : MonoBehaviour
         if (warningDimmerObject != null)
         {
             warningDimmerObject.SetActive(true);
+        }
+
+        // 🔊 เล่นเสียงเตือน Panic Event
+        if (warningAudioSource != null)
+        {
+            warningAudioSource.Play();
         }
 
         // เปลี่ยนรูป Image + SetNativeSize
