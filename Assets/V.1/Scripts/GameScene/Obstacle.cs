@@ -1,13 +1,9 @@
 using UnityEngine;
 
-/// <summary>
-/// ควบคุมการเคลื่อนที่และการชนของ Obstacle
-/// </summary>
 public class Obstacle : MonoBehaviour
 {
-    [Header("Movement")]
-    public float speed = 8f;
-    public Vector2 moveDirection = Vector2.right;
+    public float speed = 12f;
+    public Vector2 moveDirection = Vector2.left;
     public float lifeTime = 5f;
 
     void Start()
@@ -22,14 +18,29 @@ public class Obstacle : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D other)
     {
-        // ถ้าชน GumController ให้บังคับหมากฝรั่งแตกทันที
         GumController gum = other.GetComponent<GumController>();
-        if (gum == null) gum = other.GetComponentInParent<GumController>();
+        PlayerController player = other.GetComponent<PlayerController>();
 
+        // Case A: ชนโดนตัวหมากฝรั่งโดยตรง (Hit Gum) -> หมากฝรั่งแตก แต่ฟื้นตัวเร็ว!
         if (gum != null && gum.currentState == GumController.GumState.Normal)
         {
-            gum.ForcePop();
+            Debug.Log("💥 Hit Gum -> Fast Recovery!");
+            gum.ForcePop(gum.fastStunDuration); // ฟื้นตัวเร็ว (1.5 วิ)
             Destroy(gameObject);
+            return;
+        }
+
+        // Case B: ชนโดนตัวผู้เล่นโดยตรง (Hit Player) -> หมากฝรั่งแตก ฟื้นตัวช้า!
+        if (player != null)
+        {
+            Debug.Log("💥 Hit Player Body -> Normal (Slow) Recovery!");
+            GumController playerGum = player.GetComponentInChildren<GumController>();
+            if (playerGum != null && playerGum.currentState == GumController.GumState.Normal)
+            {
+                playerGum.ForcePop(playerGum.normalStunDuration); // ฟื้นตัวปกติ (2.5 วิ)
+            }
+            Destroy(gameObject);
+            return;
         }
     }
 }

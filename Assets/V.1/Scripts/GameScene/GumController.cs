@@ -1,5 +1,6 @@
 using UnityEngine;
 using Unity.Cinemachine;
+using System.Collections;
 
 /// <summary>
 /// จุดความสูงหนึ่งจุดที่จะขยาย DeadZone threshold — กำหนดเป็นค่าตายตัว ไม่ใช่สูตรต่อเนื่อง
@@ -37,6 +38,9 @@ public class GumController : MonoBehaviour
     [Tooltip("อัตราการยุบของ gum ต่อวินาทีตอนปล่อย")]
     public float shrinkRate = 1.5f;
 
+    [Tooltip("ขนาดเล็กที่สุดของ gum (ใช้สำหรับ reset)")]
+    public float minSize = 0.1f;
+
     [Header("DeadZone Scaling (ขยายตามระดับความสูงที่กำหนดตายตัว)")]
     [Tooltip("รายการจุดความสูงที่จะขยาย threshold — ถึงจุดไหนก็บวกเพิ่มตามนั้น หลังจุดสุดท้ายจะไม่ขยายอีก")]
     public DeadZoneMilestone[] milestones = new DeadZoneMilestone[]
@@ -51,15 +55,28 @@ public class GumController : MonoBehaviour
     public float maxDeadZoneThreshold = 3.0f;
 
     [Header("Timing")]
-    [Tooltip("ช่วงร่วงฟรีหลังแตก ก่อนจะเป่าลูกใหม่ได้ (วินาที)")]
-    public float popRecoveryTime = 0.4f;
+    [Tooltip("ช่วงร่วงฟรีหลังแตกจาก Threshold (เป่าเกิน) ก่อนจะเป่าลูกใหม่ได้ (วินาที)")]
+    public float popRecoveryTime = 4f;
 
-    [Tooltip("ระยะเวลามึนงงหลังโดน obstacle (วินาที)")]
+    [Tooltip("ระยะเวลามึนงงหลังโดน obstacle (วินาที) — ปัจจุบันยังไม่ถูกใช้งานจริง (ดู normalStunDuration แทน)")]
     public float dazedDuration = 0.7f;
+
+    [Header("Recovery Settings")]
+    [Tooltip("ระยะเวลาฟื้นตัวเมื่อโดนชนที่ตัว Player (วินาที) — เรียกผ่าน ForcePop()")]
+    public float normalStunDuration = 5f;
+
+    [Tooltip("ระยะเวลาฟื้นตัวเมื่อโดนชนที่ตัว หมากฝรั่งโดยตรง (วินาที)")]
+    public float fastStunDuration = 1f;
+
+    [Tooltip("ระยะเวลาฟื้นตัวเมื่อแตกเพราะทำ R/B Panic Event ไม่สำเร็จ (วินาที)")]
+    public float panicEventStunDuration = 4f;
 
     [Header("Visual")]
     [Tooltip("Transform ของ sprite หมากฝรั่งที่จะ scale ตามขนาดจริง (ลาก sprite ลูกโป่งมาใส่)")]
     public Transform gumVisual;
+
+    [Tooltip("ลาก SpriteRenderer ของหมากฝรั่งมาใส่ช่องนี้")]
+    public SpriteRenderer gumSpriteRenderer;
 
     [Tooltip("scale ตอน gum ยังไม่พองเลย (currentSize = 0)")]
     public float minVisualScale = 0.2f;
@@ -126,6 +143,7 @@ public class GumController : MonoBehaviour
     private float startY;
     private float stateTimer;
     private float shakeTimer;
+    private bool isForcedRecovery; // true ตอนแตกจาก ForcePop() กันไม่ให้ auto-recovery (popRecoveryTime) มาแย่งรีเซ็ตก่อนเวลา
 
     /// <summary>
     /// เรียกตอน spawn player เพื่อผูก transform สำหรับคำนวณ altitude
@@ -167,7 +185,12 @@ public class GumController : MonoBehaviour
                 break;
 
             case GumState.Popped:
-                TickTimer(popRecoveryTime, ResetGum);
+                // auto-recovery (popRecoveryTime) ใช้เฉพาะตอนแตกเองจากเป่าเกิน threshold เท่านั้น
+                // ถ้าเป็น ForcePop (โดน obstacle) จะมี RecoveryRoutine ของตัวเองคุมเวลาแทน ไม่ให้มาชนกัน
+                if (!isForcedRecovery)
+                {
+                    TickTimer(popRecoveryTime, ResetGum);
+                }
                 break;
 
             case GumState.Dazed:
@@ -332,25 +355,85 @@ public class GumController : MonoBehaviour
         currentSize = Mathf.Min(currentSize + amount, currentDeadZoneThreshold * 0.98f);
     }
 
+    /// <summary>
+    /// รีเซ็ตขนาดหมากฝรั่งกลับไปเป็นขนาดเริ่มต้น (เล็กที่สุด) โดยไม่ทำให้แตก
+    /// (visual จะตามมาเองผ่าน UpdateVisualScale() ที่รันทุกเฟรมอยู่แล้ว ไม่ต้องไปยุ่งกับ transform ตรงนี้)
+    /// </summary>
+    public void ResetToMinSize()
+    {
+        if (currentState != GumState.Normal) return;
+        currentSize = minSize;
+    }
+
     private void Pop()
     {
         currentState = GumState.Popped;
         stateTimer = 0f;
+        isForcedRecovery = false;
         FirePopShake();
+
+        // ปิด sprite เหมือนกับ ForcePop() ให้ทุกกรณีที่แตกดูสม่ำเสมอกันหมด
+        if (gumSpriteRenderer != null)
+        {
+            gumSpriteRenderer.enabled = false;
+        }
+
         OnPop?.Invoke();
     }
 
-    /// <summary>บังคับให้หมากฝรั่งแตกทันที (ใช้ตอนชน Obstacle)</summary>
-    public void ForcePop()
+    /// <summary>
+    /// สั่งหมากฝรั่งแตก สามารถกำหนดเวลารีคัฟเวอรี่ customStunTime ได้
+    /// </summary>
+    public void ForcePop(float customStunDuration = -1f)
     {
-        if (currentState == GumState.Popped || currentState == GumState.Dazed) return;
-        Pop();
+        if (currentState == GumState.Popped) return;
+
+        currentState = GumState.Popped;
+        isForcedRecovery = true;
+        float duration = (customStunDuration > 0f) ? customStunDuration : normalStunDuration;
+
+        // 🔹 ซ่อนรูปหมากฝรั่ง (ตัว GameObject และ Coroutine ยังทำงานต่อได้ปกติ)
+        if (gumSpriteRenderer != null)
+        {
+            gumSpriteRenderer.enabled = false;
+        }
+
+        // เรียก Coroutine ได้ตามปกติ ไม่ติด Error แล้ว
+        StartCoroutine(RecoveryRoutine(duration));
+    }
+
+    private IEnumerator RecoveryRoutine(float stunTime)
+    {
+        yield return new WaitForSeconds(stunTime);
+
+        // ใช้ 0f แทน minSize เพื่อให้ตรงกับขนาดเล็กสุดจริงของ Normal state
+        // (Shrink() ก็ floor ไว้ที่ 0f เหมือนกัน) ถ้าใช้ minSize จะทำให้ scale เริ่มต้นสูงกว่า
+        // minVisualScale นิดหน่อย แล้วพอ Shrink() ทำงานต่อ (ถ้ายังไม่ได้กดเป่า) จะเห็น gum
+        // หดลงอีกรอบทันทีที่โผล่มา ดูเหมือนขนาดเพี้ยน/กระตุก
+        currentSize = 0f;
+
+        // 🔹 แสดงรูปหมากฝรั่งกลับมา
+        if (gumSpriteRenderer != null)
+        {
+            gumSpriteRenderer.enabled = true;
+        }
+
+        currentState = GumState.Normal;
+        isForcedRecovery = false;
+        OnGumReset?.Invoke(); // แจ้งระบบอื่นที่ฟัง event นี้อยู่ด้วย ให้สอดคล้องกับ path ปกติ
     }
 
     private void ResetGum()
     {
         currentSize = 0f;
         currentState = GumState.Normal;
+
+        // เปิด sprite กลับมา (คู่กับที่ Pop() สั่งปิดไว้)
+        if (gumSpriteRenderer != null)
+        {
+            gumSpriteRenderer.enabled = true;
+        }
+
         OnGumReset?.Invoke();
     }
 

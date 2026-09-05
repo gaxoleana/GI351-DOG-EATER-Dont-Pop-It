@@ -74,12 +74,31 @@ public class PanicEventManager : MonoBehaviour
     [Tooltip("แรงยกตัวละครขึ้นสั้น ๆ ต่อการกด 1 ครั้งตอนกดรัว")]
     public float mashLiftImpulse = 2.5f;
 
-    [Tooltip("จำนวนครั้งที่ต้องกดให้ครบ")]
-    public int targetMashes = 10;
+    [Tooltip("จำนวนครั้งต่ำสุดในการกดรัว")]
+    public int minTargetMashes = 3;
+
+    [Tooltip("จำนวนครั้งสูงสุดในการกดรัว")]
+    public int maxTargetMashes = 12;
+
+    // Runtime Calculated ( Read Only )
+    [HideInInspector]
+    public int targetMashes; // เก็บจำนวนเป้าหมายที่สุ่มได้ในรอบนั้นๆ
 
     [Header("Blue Event (Hold Off) Settings")]
     [Tooltip("ระยะเวลาที่ต้องห้ามกดปุ่ม (วินาที)")]
     public float blueEventDuration = 3.0f;
+
+    [Tooltip("ระยะเวลาต่ำสุดที่ต้องห้ามกดปุ่ม (วินาที)")]
+    public float minBlueEventDuration = 1.5f;
+
+    [Tooltip("ระยะเวลาสูงสุดที่ต้องห้ามกดปุ่ม (วินาที)")]
+    public float maxBlueEventDuration = 3.5f;
+
+    [Tooltip("ตัวคูณแรงโน้มถ่วงระหว่าง Blue Event (เช่น 0.4 = ตกช้าลงเหลือ 40% ของความเร็วปกติ)")]
+    public float blueEventGravityMultiplier = 0.4f;
+
+    [HideInInspector]
+    public float currentBlueDuration; // เก็บเวลาที่สุ่มได้ในรอบนั้นๆ
 
     [Header("Active Event UI Feedback")]
     public GameObject redUIContainer;
@@ -87,6 +106,7 @@ public class PanicEventManager : MonoBehaviour
     public TextMeshProUGUI redCountText;
 
     public GameObject blueUIContainer;
+    public Image blueProgressBar;
     public TextMeshProUGUI blueTimerText;
 
     [Header("Camera Shake Settings (Cinemachine 3.1.7)")]
@@ -274,17 +294,37 @@ public class PanicEventManager : MonoBehaviour
 
         if (player != null) player.SetInputLocked(true);
 
-        // เริ่มจอสั่นแบบต่อเนื่องเมื่อเข้าสู่ Active Event
         TriggerContinuousShake(activeShakeAmplitude);
 
-        if (currentEvent == EventType.Red_Mash && redUIContainer != null)
+        if (currentEvent == EventType.Red_Mash)
         {
-            redUIContainer.SetActive(true);
-            UpdateRedUI();
+            targetMashes = Random.Range(minTargetMashes, maxTargetMashes + 1);
+
+            if (redUIContainer != null)
+            {
+                redUIContainer.SetActive(true);
+                UpdateRedUI();
+            }
         }
-        else if (currentEvent == EventType.Blue_HoldOff && blueUIContainer != null)
+        else if (currentEvent == EventType.Blue_HoldOff)
         {
-            blueUIContainer.SetActive(true);
+            // 🎯 สุ่มระยะเวลา Blue Event (เช่น 1.5 ถึง 3.5 วินาที)
+            currentBlueDuration = Random.Range(minBlueEventDuration, maxBlueEventDuration);
+            stateTimer = currentBlueDuration;
+
+            if (player != null)
+            {
+                // 1. ปรับ Gravity ให้ต่ำลง
+                player.SetGravityMultiplier(blueEventGravityMultiplier);
+
+                // 2. 🔹 สั่งตัดความเร็วร่วงสะสมทันที ดึงให้ตกช้าๆ ตั้งแต่เฟรมแรกที่เริ่ม Event (ตั้งค่าความเร็ว Y ดิ่งได้ตามต้องการ)
+                player.DampDownwardVelocity(-1.0f);
+            }
+
+            if (blueUIContainer != null)
+            {
+                blueUIContainer.SetActive(true);
+            }
         }
     }
 
@@ -348,12 +388,22 @@ public class PanicEventManager : MonoBehaviour
             blueTimerText.text = $"{Mathf.Max(0f, stateTimer):0.0}s";
         }
 
-        if (Input.GetMouseButton(0) || Input.GetKey(KeyCode.Space))
+        // อัปเดต UI หลอดนับถอยหลัง / หลอดเติมเต็มตามเวลาที่สุ่มได้จริง
+        if (blueProgressBar != null && currentBlueDuration > 0f)
+        {
+            // หลอดจะค่อยๆ เต็มจาก 0 ถึง 1 เมื่อใกล้หมดเวลา
+            float progress = 1f - (stateTimer / currentBlueDuration);
+            blueProgressBar.fillAmount = progress;
+        }
+
+        // ถ้าเผลอกดปุ่มระหว่าง Blue Event -> แพ้ทันที
+        if (Input.GetMouseButtonDown(0) || Input.GetKeyDown(KeyCode.Space))
         {
             FailEvent();
             return;
         }
 
+        // ห้ามกดจนหมดเวลา -> ชนะ Event
         if (stateTimer <= 0f)
         {
             EndEvent(true);
@@ -365,13 +415,14 @@ public class PanicEventManager : MonoBehaviour
         EndEvent(false);
         if (gum != null)
         {
-            gum.ForcePop();
+            // ระบุ duration ของ R/B Event โดยเฉพาะ ไม่งั้นจะ fallback ไปใช้ normalStunDuration
+            // (ซึ่งเป็นค่าของกรณีชนตัว Player คนละ scenario กัน)
+            gum.ForcePop(gum.panicEventStunDuration);
         }
     }
 
     private void EndEvent(bool success)
     {
-        // ปลดล็อกเวลาเผื่อมีการจบ Event กลางคัน
         Time.timeScale = 1f;
 
         if (warningAnimCoroutine != null)
@@ -383,9 +434,12 @@ public class PanicEventManager : MonoBehaviour
         currentState = EventState.Idle;
         currentEvent = EventType.None;
 
-        if (player != null) player.SetInputLocked(false);
+        if (player != null)
+        {
+            player.SetInputLocked(false);
+            player.ResetGravity(); // 🔹 คืนค่าแรงโน้มถ่วงกลับเป็นระดับปกติทันทีเมื่อจบ Event
+        }
 
-        // หยุดจอสั่นทันทีเมื่อจบ Event
         StopCameraShake();
         HideAllUI();
         ResetCooldown();

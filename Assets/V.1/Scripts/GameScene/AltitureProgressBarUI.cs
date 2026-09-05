@@ -47,7 +47,7 @@ public class AltitudeProgressBarUI : MonoBehaviour
     {
         if (playerTransform == null)
         {
-            PlayerController player = FindFirstObjectByType<PlayerController>();
+            PlayerController player = FindAnyObjectByType<PlayerController>();
             if (player != null) playerTransform = player.transform;
         }
 

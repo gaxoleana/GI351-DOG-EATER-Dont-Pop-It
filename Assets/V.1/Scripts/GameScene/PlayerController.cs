@@ -1,3 +1,4 @@
+using Unity.Cinemachine;
 using UnityEngine;
 
 /// <summary>
@@ -37,8 +38,27 @@ public class PlayerController : MonoBehaviour
     [Tooltip("ใช้ mouse/touch (กดซ้าย = เป่า) — ปิดถ้าจะต่อ Input System เอง")]
     public bool useDefaultInput = true;
 
+    [Header("Debug Status (Read Only)")]
+    [Tooltip("ความเร็ว Y ปัจจุบัน (เปิดดูใน Inspector ตอนเล่น)")]
+    [SerializeField] private float debugVelocityY;
+
+    [Tooltip("ค่า Gravity Scale ปัจจุบัน (เปิดดูใน Inspector ตอนเล่น)")]
+    [SerializeField] private float debugGravityScale;
+
+    [Header("Max Fall Speed Shake Settings")]
+    [Tooltip(" CinemachineCamera สำหรับทำจอสั่น")]
+    public CinemachineCamera vcam;
+
+    [Tooltip("ระดับความเร็วร่วงลง Y ที่จะเริ่มให้จอสั่น (ติดลบ เช่น -15)")]
+    public float maxFallSpeedThreshold = -15f;
+
+    [Tooltip("ความแรงจอสั่นตอนตกด้วยความเร็วสูงสุด")]
+    public float fallShakeAmplitude = 2.0f;
+
+    private CinemachineBasicMultiChannelPerlin noiseComponent;
     private Rigidbody2D rb;
     private bool isBlowInputHeld;
+    private float defaultGravityScale;
 
     // สถานะพิเศษจากภายนอก เช่น Panic Event Blue (ห้ามกด)
     private bool inputLocked;
@@ -46,6 +66,12 @@ public class PlayerController : MonoBehaviour
     void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
+
+        if (vcam == null) vcam = FindAnyObjectByType<CinemachineCamera>();
+        if (vcam != null)
+        {
+            noiseComponent = vcam.GetComponent<CinemachineBasicMultiChannelPerlin>();
+        }
     }
 
     void Start()
@@ -68,6 +94,13 @@ public class PlayerController : MonoBehaviour
         }
 
         UpdateGumFromInput();
+        HandleMaxFallShake();
+
+        if (rb != null)
+        {
+            debugVelocityY = rb.linearVelocity.y; // Unity 6 / 2023.3+ ใช้ linearVelocity (หากใช้ Unity เวอร์ชันเก่ากว่าให้เปลี่ยนเป็น rb.velocity.y)
+            debugGravityScale = rb.gravityScale;
+        }
     }
 
     void FixedUpdate()
@@ -153,6 +186,71 @@ public class PlayerController : MonoBehaviour
     }
 
     /// <summary>
+    /// ปรับตัวคูณแรงโน้มถ่วงชั่วคราว (เช่น ใส่ 0.5f เพื่อให้ตกช้าลงครึ่งหนึ่ง)
+    /// </summary>
+    public void SetGravityMultiplier(float multiplier)
+    {
+        if (rb != null)
+        {
+            rb.gravityScale = defaultGravityScale * multiplier;
+        }
+    }
+
+    /// <summary>
+    /// คืนค่าแรงโน้มถ่วงกลับสู่ระดับปกติ
+    /// </summary>
+    public void ResetGravity()
+    {
+        if (rb != null)
+        {
+            rb.gravityScale = defaultGravityScale;
+        }
+    }
+
+    /// <summary>
+    /// 🔹 สั่งเบรกความเร็วร่วงสะสม Y ไม่ให้ดิ่งเร็วเกินไปทันทีตอนเข้า Blue Event
+    /// </summary>
+    /// <param name="maxDownwardsVelocity">ความเร็วร่วงลงสูงสุดที่ยอมให้มีได้ (ค่าติดลบ เช่น -1.5f)</param>
+    public void DampDownwardVelocity(float maxDownwardsVelocity = -1.5f)
+    {
+        if (rb == null) return;
+
+        Vector2 vel = rb.linearVelocity;
+        // ถ้ากำลังดิ่งลงเร็วกว่าค่า maxDownwardsVelocity ให้ดึงเบรกไว้ที่ค่านั้นทันที
+        if (vel.y < maxDownwardsVelocity)
+        {
+            vel.y = maxDownwardsVelocity;
+            rb.linearVelocity = vel;
+        }
+    }
+
+    private void HandleMaxFallShake()
+    {
+        if (rb == null || noiseComponent == null) return;
+
+        // เช็กความเร็วร่วง Y (ค่าติดลบยิ่งมาก = ตกยิ่งเร็ว)
+        float currentVelY = rb.linearVelocity.y; // Unity 6 / 2023.3+ (เวอร์ชันเก่าใช้ rb.velocity.y)
+
+        if (currentVelY <= maxFallSpeedThreshold)
+        {
+            // คำนวณความแรงสั่นตามระดับความเร็วที่เกิน Threshold
+            float overSpeedRatio = Mathf.Clamp01((maxFallSpeedThreshold - currentVelY) / 10f);
+            float currentShake = Mathf.Lerp(1.0f, fallShakeAmplitude, overSpeedRatio);
+
+            noiseComponent.AmplitudeGain = currentShake;
+        }
+        else
+        {
+            // ถ้าไม่ใช่ช่วง Event สั่งหยุดสั่นเมื่อความเร็วตกปกติ
+            PanicEventManager panicManager = FindAnyObjectByType<PanicEventManager>();
+            if (panicManager != null && panicManager.currentState == PanicEventManager.EventState.Idle)
+            {
+                noiseComponent.AmplitudeGain = Mathf.Lerp(noiseComponent.AmplitudeGain, 0f, Time.deltaTime * 8f);
+            }
+        }
+    }
+
+    /// <summary>
     /// สั่งแรงยกตัวละครสั้น ๆ ตอนกดรัวใน Red Event เพื่อให้ตัวลอยขึ้นสู้แรงโน้มถ่วงได้ปกติ
     /// </summary>
     public void ApplyMashImpulse(float impulseForce = 3f)
@@ -176,5 +274,7 @@ public class PlayerController : MonoBehaviour
     {
         // gum จะแตกเองผ่าน logic ปกติของมัน ถ้าอยากบังคับแตกทันที
         // สามารถเพิ่ม public ForcePop() ใน GumController แล้วเรียกตรงนี้แทน
+        // ใส่ SFX โดนชน, ตัวละครชะงัก หรือเล่น Animation โดนชนตรงนี้ได้
+        Debug.Log("Player taken damage from obstacle!");
     }
 }
