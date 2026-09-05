@@ -1,31 +1,20 @@
 using UnityEngine;
 
-/// <summary>
-/// วาดวงกลม placeholder ด้วย LineRenderer (ไม่ต้องมี sprite art) แสดงขอบเขตสูงสุดที่ gum
-/// เป่าไปถึงได้ก่อนแตก — ไว้ใช้แทน art จริงระหว่างพัฒนา ค่อยเปลี่ยนเป็น sprite ทีหลังได้
-/// วงนี้ "โชว์ตลอด" ต่างจาก ring warning ใน GumController ที่ fade in เฉพาะโซนอันตราย
-/// </summary>
 [RequireComponent(typeof(LineRenderer))]
 public class DeadZonePlaceholder : MonoBehaviour
 {
     [Header("References")]
-    [Tooltip("ผูกกับ GumController เพื่ออ่านขนาด visual สูงสุดของ gum")]
     public GumController gum;
 
     [Header("Circle Settings")]
-    [Tooltip("จำนวนจุดที่ใช้วาดวงกลม ยิ่งเยอะยิ่งกลมเนียน")]
     [Range(8, 64)] public int segments = 32;
-
-    [Tooltip("ความหนาเส้น")]
     public float lineWidth = 0.05f;
-
-    [Tooltip("สี placeholder (แนะนำให้โปร่งใสหน่อย จะได้ไม่บังเกม)")]
     public Color placeholderColor = new Color(1f, 1f, 1f, 0.35f);
-
-    [Tooltip("รัศมีวงกลม = maxVisualScale ของ gum คูณค่านี้ ปรับได้ถ้าอยากให้วงใหญ่/เล็กกว่าขอบ gum จริง")]
     public float radiusMultiplier = 0.55f;
 
     private LineRenderer line;
+    private float noInputTimer = 0f;
+    public float hideDelay = 0.2f;
 
     void Awake()
     {
@@ -37,7 +26,6 @@ public class DeadZonePlaceholder : MonoBehaviour
         line.startColor = placeholderColor;
         line.endColor = placeholderColor;
 
-        // material พื้นฐานกันไม่ขึ้นสีชมพู (missing material) ถ้ายังไม่ได้ตั้งเอง
         if (line.sharedMaterial == null)
         {
             line.material = new Material(Shader.Find("Sprites/Default"));
@@ -51,9 +39,28 @@ public class DeadZonePlaceholder : MonoBehaviour
 
     void Update()
     {
-        // เผื่อปรับค่า maxVisualScale ของ gum ระหว่าง playtest ใน Inspector
-        // ถ้าไม่ต้องการ real-time update ลบบรรทัดนี้ทิ้งแล้วเรียก DrawCircle() ใน Start() อย่างเดียวพอ
-        DrawCircle();
+        // 1) ดักจับ Input (Spacebar หรือ Mouse Button 0)
+        bool hasInput = Input.GetKey(KeyCode.Space) || Input.GetMouseButton(0);
+
+        if (hasInput)
+        {
+            noInputTimer = 0f;
+            if (!line.enabled) line.enabled = true;
+        }
+        else
+        {
+            noInputTimer += Time.deltaTime;
+            if (noInputTimer >= hideDelay && line.enabled)
+            {
+                line.enabled = false;
+            }
+        }
+
+        // 2) อัปเดตและวาดวงกลมเฉพาะตอนที่มันถูกเปิดให้แสดงเท่านั้น
+        if (line.enabled)
+        {
+            DrawCircle();
+        }
     }
 
     private void DrawCircle()

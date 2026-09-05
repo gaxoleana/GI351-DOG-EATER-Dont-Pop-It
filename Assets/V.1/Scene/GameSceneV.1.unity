@@ -725,8 +725,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CameraZoomController
   vcam: {fileID: 354274033}
   gum: {fileID: 702462037}
-  baseOrthoSize: 5
-  maxOrthoSize: 7
+  baseOrthoSize: 7
+  maxOrthoSize: 11
   zoomSpeed: 1
 --- !u!114 &354274037
 MonoBehaviour:
@@ -1391,6 +1391,7 @@ MonoBehaviour:
   dazedDuration: 0.7
   normalStunDuration: 2.5
   fastStunDuration: 1.5
+  panicEventStunDuration: 4
   gumVisual: {fileID: 702462035}
   gumSpriteRenderer: {fileID: 702462036}
   minVisualScale: 0.2
