@@ -37,7 +37,7 @@ public class AltitudeProgressBarUI : MonoBehaviour
     public TextMeshProUGUI altitudeText;
 
     [Header("Events")]
-    [Tooltip("เหตุการณ์ที่จะทำงานเมื่อถึงเส้นชัย 3000m")]
+    [Tooltip("เหตุการณ์ที่จะทำงานเมื่อถึงเส้นชัย 30km")]
     public bool hasReachedFinishLine = false;
 
     // Action เผื่อดึงไปใช้ตัดเข้าฉากจบ หรือขึ้น UI Win
@@ -63,7 +63,7 @@ public class AltitudeProgressBarUI : MonoBehaviour
         if (playerTransform == null) return;
 
         // 1. คำนวณความสูงปัจจุบันโดยอิงจากตำแหน่ง Y ของ Player
-        float currentAltitude = Mathf.Max(0f, playerTransform.position.y - startYOffset);
+        float currentAltitude = Mathf.Max(0f, playerTransform.position.y - startYOffset); // แปลงจากเมตรเป็นกิโลเมตร
 
         // 2. คำนวณ Ratio ความก้าวหน้า (0.0 ถึง 1.0)
         float progressRatio = Mathf.Clamp01((currentAltitude - minAltitude) / (maxAltitude - minAltitude));
@@ -85,10 +85,10 @@ public class AltitudeProgressBarUI : MonoBehaviour
         // 5. อัปเดตข้อความแสดงระยะทาง
         if (altitudeText != null)
         {
-            altitudeText.text = $"{Mathf.FloorToInt(currentAltitude):N0}m / {maxAltitude:N0}m";
+            altitudeText.text = $"{Mathf.FloorToInt(currentAltitude/100):N0}km / {Mathf.FloorToInt(maxAltitude/100):N0}km";
         }
 
-        // 6. เช็กเงื่อนไขเข้าเส้นชัย (3000m)
+        // 6. เช็กเงื่อนไขเข้าเส้นชัย (30km)
         if (progressRatio >= 1.0f && !hasReachedFinishLine)
         {
             hasReachedFinishLine = true;
@@ -98,7 +98,7 @@ public class AltitudeProgressBarUI : MonoBehaviour
 
     private void TriggerFinishLine()
     {
-        Debug.Log("🎉 บรรลุความสูง 3000m เข้าเส้นชัยแล้ว!");
+        Debug.Log("🎉 บรรลุความสูง 30km เข้าเส้นชัยแล้ว!");
         OnReachFinishLine?.Invoke();
 
         // สามารถใส่ Logic จบเกม เช่น ขึ้นหน้าต่าง Win UI หรือหยุดเกมได้ที่นี่

@@ -446,7 +446,7 @@ MonoBehaviour:
   m_ScaleFactor: 1
   m_ReferenceResolution: {x: 1920, y: 1080}
   m_ScreenMatchMode: 0
-  m_MatchWidthOrHeight: 1
+  m_MatchWidthOrHeight: 0.5
   m_PhysicalUnit: 3
   m_FallbackScreenDPI: 96
   m_DefaultSpriteDPI: 96
@@ -1648,18 +1648,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CloudSpawnerInGame
   playerTransform: {fileID: 1351639085}
-  startAltitude: 200
+  startAltitude: 100
   cloudPrefabs:
   - {fileID: 1349144753788767137, guid: a18d7d2a818e82e419ee94cbf7b64554, type: 3}
   - {fileID: 9216878467216669218, guid: 3cc4d3287909b434f97b33874f6a277f, type: 3}
   - {fileID: 8129143666688390359, guid: 77b80feb1446d814980a389b8eb98bbf, type: 3}
   - {fileID: 5765803039997740081, guid: 0b6de65885b07794fbaeb8e8b9ea3215, type: 3}
-  spawnIntervalMin: 1.5
-  spawnIntervalMax: 3
+  spawnIntervalMin: 1
+  spawnIntervalMax: 2
   spawnXRangeMin: -6
   spawnXRangeMax: 6
   spawnAheadDistance: 12
-  despawnBehindDistance: 30
+  despawnBehindDistance: 100
   driftSpeed: 0.3
   randomizeScale: 1
   minScale: 0.05
@@ -1690,6 +1690,7 @@ GameObject:
   - component: {fileID: 1034801278}
   - component: {fileID: 1034801277}
   - component: {fileID: 1034801279}
+  - component: {fileID: 1034801282}
   - component: {fileID: 1034801280}
   - component: {fileID: 1034801281}
   m_Layer: 0
@@ -1767,7 +1768,7 @@ MonoBehaviour:
   blueEventDuration: 3
   minBlueEventDuration: 2
   maxBlueEventDuration: 4
-  blueEventGravityMultiplier: 0.2
+  blueEventGravityMultiplier: 0.1
   currentBlueDuration: 0
   redUIContainer: {fileID: 352850866}
   redProgressBar: {fileID: 1723224050}
@@ -1832,6 +1833,57 @@ MonoBehaviour:
   maxOffsetY: 6
   spawnXRight: 12
   isBossPhase: 0
+--- !u!114 &1034801282
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1034801276}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2c9ce45b8a860ed479a2d96e025240bc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PanicEventManagerVariantTimeStop
+  player: {fileID: 1351639081}
+  gum: {fileID: 702462037}
+  warningDimmerObject: {fileID: 1647352183}
+  minInterval: 8
+  maxInterval: 15
+  startAltitude: 100
+  warningDuration: 1.5
+  warningRectTransform: {fileID: 637530741}
+  warningImage: {fileID: 637530742}
+  redWarningSprite: {fileID: -6102805860222315482, guid: d3c3a9a2ccf3b4a418f243571a45a5dc, type: 3}
+  blueWarningSprite: {fileID: 1176280030134115793, guid: 29e36a2c7a3b54445a954805a00d32e7, type: 3}
+  slideDistanceX: 1200
+  slideInDuration: 0.3
+  slideOutDuration: 0.3
+  redEventDuration: 2.5
+  sizePerMash: 0.05
+  mashLiftImpulse: 2.5
+  minTargetMashes: 3
+  maxTargetMashes: 12
+  targetMashes: 0
+  blueEventDuration: 3
+  minBlueEventDuration: 2
+  maxBlueEventDuration: 4
+  blueEventGravityMultiplier: 0.1
+  currentBlueDuration: 0
+  redUIContainer: {fileID: 352850866}
+  redProgressBar: {fileID: 1723224050}
+  redCountText: {fileID: 2089784058}
+  blueUIContainer: {fileID: 795522146}
+  blueProgressBar: {fileID: 1746439709}
+  blueTimerText: {fileID: 166317572}
+  vcam: {fileID: 354274033}
+  activeShakeAmplitude: 1
+  mashShakePulse: 2.5
+  shakeDamping: 5
+  currentState: 0
+  currentEvent: 0
+  stateTimer: 0
+  currentMashes: 0
 --- !u!1 &1185302221
 GameObject:
   m_ObjectHideFlags: 0
@@ -2299,6 +2351,7 @@ MonoBehaviour:
   lineWidth: 0.1
   placeholderColor: {r: 1, g: 0, b: 0, a: 0.35}
   radiusMultiplier: 0.5
+  hideDelay: 0.2
 --- !u!120 &1698380171
 LineRenderer:
   serializedVersion: 3

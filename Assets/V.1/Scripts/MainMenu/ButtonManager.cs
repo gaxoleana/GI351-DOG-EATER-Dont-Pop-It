@@ -6,7 +6,7 @@ public class ButtonManager : MonoBehaviour
     // เรียกใช้จาก OnClick() ของ Button เพื่อโหลด Scene ที่ต้องการ
     public void LoadGameScene()
     {
-        SceneManager.LoadScene("GameScene");
+        SceneManager.LoadScene("GameSceneV.1");
     }
 
     /* โหลด Scene โดยใช้ build index แทนชื่อ

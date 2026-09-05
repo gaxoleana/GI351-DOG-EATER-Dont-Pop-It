@@ -242,8 +242,8 @@ public class PlayerController : MonoBehaviour
         else
         {
             // ถ้าไม่ใช่ช่วง Event สั่งหยุดสั่นเมื่อความเร็วตกปกติ
-            PanicEventManager panicManager = FindAnyObjectByType<PanicEventManager>();
-            if (panicManager != null && panicManager.currentState == PanicEventManager.EventState.Idle)
+            PanicEventManagerVariantNoStop panicManager = FindAnyObjectByType<PanicEventManagerVariantNoStop>();
+            if (panicManager != null && panicManager.currentState == PanicEventManagerVariantNoStop.EventState.Idle)
             {
                 noiseComponent.AmplitudeGain = Mathf.Lerp(noiseComponent.AmplitudeGain, 0f, Time.deltaTime * 8f);
             }
