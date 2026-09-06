@@ -64,6 +64,13 @@ public class PlayerController : MonoBehaviour
     [Tooltip("ความเร็วในการจางหายของจอดำ (ค่ายิ่งเยอะยิ่งจางเร็ว)")]
     public float flashFadeSpeed = 5f;
 
+    [Header("Damage Feedback")]
+    [Tooltip("UI Image สีดำเต็มจอ สำหรับกระพริบตอนโดนชนตัว")]
+    public float damageDuration = 3f; // ระยะเวลาจอดำและสั่น (3 วินาที)
+    public float damageShakeAmplitude = 4f; // ความแรงของการสั่นตอนโดนชน
+
+    private bool isDamageShaking = false; // เอาไว้กันไม่ให้สั่นตีกับตอนตกลงมา
+
     private CinemachineBasicMultiChannelPerlin noiseComponent;
     private Rigidbody2D rb;
     private bool isBlowInputHeld;
@@ -236,6 +243,7 @@ public class PlayerController : MonoBehaviour
     private void HandleMaxFallShake()
     {
         if (rb == null || noiseComponent == null) return;
+        if (isDamageShaking) return; // 🔹 บรรทัดนี้สำคัญมาก! ถ้าสั่นจากดาเมจอยู่ ให้ข้ามการคำนวณตกเร็วไปเลย
 
         // เช็กความเร็วร่วง Y (ค่าติดลบยิ่งมาก = ตกยิ่งเร็ว)
         float currentVelY = rb.linearVelocity.y; // Unity 6 / 2023.3+ (เวอร์ชันเก่าใช้ rb.velocity.y)
@@ -274,16 +282,63 @@ public class PlayerController : MonoBehaviour
 
     /// <summary>เรียกตอนโดน hitbox ตัว player (ไม่ใช่ hitbox gum)</summary>
     /// <summary>เรียกตอนโดน hitbox ตัว player (ไม่ใช่ hitbox gum)</summary>
+    /// <summary>เรียกตอนโดน hitbox ตัว player (ไม่ใช่ hitbox gum)</summary>
     public void OnHitByObstacleBody()
     {
-        // ทำให้ระบบมึนงงทางเกมเพลย์ทำงาน (หมากฝรั่งยุบ)
         gum?.TriggerDazed();
 
-        // สั่งกระพริบจอดำ
+        // เริ่มแสดงเอฟเฟกต์จอดำและสั่น
+        StartCoroutine(DamageFeedbackRoutine());
+    }
+
+    private IEnumerator DamageFeedbackRoutine()
+    {
+        isDamageShaking = true;
+
         if (blackFlashImage != null)
         {
-            StartCoroutine(FlashBlackRoutine());
+            blackFlashImage.gameObject.SetActive(true);
         }
+
+        float timer = 0f;
+
+        while (timer < damageDuration)
+        {
+            timer += Time.deltaTime;
+
+            // คำนวณความรุนแรง (intensity) จาก 1 ไป 0 ตามเวลา 3 วินาที
+            float intensity = 1f - (timer / damageDuration);
+
+            // 1. ค่อยๆ ลดความดำของจอ
+            if (blackFlashImage != null)
+            {
+                Color flashColor = Color.black;
+                flashColor.a = intensity;
+                blackFlashImage.color = flashColor;
+            }
+
+            // 2. ค่อยๆ ลดความแรงของการสั่นกล้อง
+            if (noiseComponent != null)
+            {
+                noiseComponent.AmplitudeGain = damageShakeAmplitude * intensity;
+            }
+
+            yield return null; // รอทำงานต่อในเฟรมถัดไป
+        }
+
+        // รีเซ็ตค่ากลับเป็นปกติเมื่อครบ 3 วินาที
+        if (blackFlashImage != null)
+        {
+            blackFlashImage.color = new Color(0f, 0f, 0f, 0f);
+            blackFlashImage.gameObject.SetActive(false);
+        }
+
+        if (noiseComponent != null)
+        {
+            noiseComponent.AmplitudeGain = 0f;
+        }
+
+        isDamageShaking = false;
     }
 
     private IEnumerator FlashBlackRoutine()
