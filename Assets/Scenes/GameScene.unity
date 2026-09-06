@@ -765,7 +765,7 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 6172183
-  m_SortingLayer: -1
+  m_SortingLayer: -2
   m_SortingOrder: 3
   m_MaskInteraction: 0
   m_Sprite: {fileID: 4130640169021434097, guid: c042e0c9f97e65141a90f05b23734fbc, type: 3}
@@ -975,7 +975,7 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 6172183
-  m_SortingLayer: -1
+  m_SortingLayer: -2
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_Sprite: {fileID: -855298285791758126, guid: ebd44401bffde2343804285b3c4abf4b, type: 3}
@@ -1238,7 +1238,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BubbleGumPlayer
   cinemachineCam: {fileID: 445594285}
   minCamSize: 5
-  maxCamSize: 12
   zoomSpeed: 5
   inflateUpwardForce: 15
   normalGravity: 3
@@ -1317,8 +1316,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d7ae97e926a22b24aadb958b5eee1ed7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerSoundController
+  gum: {fileID: 0}
   blowSound: {fileID: 8300000, guid: 3c04862162cabc04abacb51425f03233, type: 3}
   popSound: {fileID: 8300000, guid: a5321310557caae4ea42a4bbf2841074, type: 3}
+  blowSource: {fileID: 0}
+  sfxSource: {fileID: 0}
 --- !u!82 &418234948
 AudioSource:
   m_ObjectHideFlags: 0
@@ -1968,10 +1970,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CloudSpawner
   cameraTransform: {fileID: 519420032}
   cloudPrefabs:
-  - {fileID: 2890914833450018958, guid: 70888cc508bf1464d8160758e6993fe0, type: 3}
-  - {fileID: 2419614164082855937, guid: 526ceb768bc80e74fa07c39d307fc52f, type: 3}
-  - {fileID: 5621747719825532390, guid: ddbd9cb707dceb34c901854b95c8b3c5, type: 3}
-  - {fileID: 1982985394297909320, guid: 8e6650a7871cbca418ef2def442c1889, type: 3}
+  - {fileID: 5765803039997740081, guid: 0b6de65885b07794fbaeb8e8b9ea3215, type: 3}
+  - {fileID: 8129143666688390359, guid: 77b80feb1446d814980a389b8eb98bbf, type: 3}
+  - {fileID: 9216878467216669218, guid: 3cc4d3287909b434f97b33874f6a277f, type: 3}
+  - {fileID: 1349144753788767137, guid: a18d7d2a818e82e419ee94cbf7b64554, type: 3}
   spawnYDistance: 50
   spawnIntervalY: 7
   destroyYDistance: 200
@@ -2324,7 +2326,7 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 6172183
-  m_SortingLayer: -1
+  m_SortingLayer: -2
   m_SortingOrder: 1
   m_MaskInteraction: 0
   m_Sprite: {fileID: -4178046375966092550, guid: e8daa2c4c50772f42b0a406a96ffb00b, type: 3}
@@ -3090,7 +3092,7 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 6172183
-  m_SortingLayer: -1
+  m_SortingLayer: -2
   m_SortingOrder: 5
   m_MaskInteraction: 0
   m_Sprite: {fileID: -6470460504253458178, guid: 7e1c7920429c02548b0c16777a8cee3b, type: 3}
@@ -3403,7 +3405,7 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 6172183
-  m_SortingLayer: -1
+  m_SortingLayer: -2
   m_SortingOrder: 3
   m_MaskInteraction: 0
   m_Sprite: {fileID: 4130640169021434097, guid: c042e0c9f97e65141a90f05b23734fbc, type: 3}
@@ -3495,7 +3497,7 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 6172183
-  m_SortingLayer: -1
+  m_SortingLayer: -2
   m_SortingOrder: 5
   m_MaskInteraction: 0
   m_Sprite: {fileID: -6470460504253458178, guid: 7e1c7920429c02548b0c16777a8cee3b, type: 3}
@@ -3796,7 +3798,7 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 6172183
-  m_SortingLayer: -1
+  m_SortingLayer: -2
   m_SortingOrder: 4
   m_MaskInteraction: 0
   m_Sprite: {fileID: -6470460504253458178, guid: 7e1c7920429c02548b0c16777a8cee3b, type: 3}
@@ -4489,7 +4491,7 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 6172183
-  m_SortingLayer: -1
+  m_SortingLayer: -2
   m_SortingOrder: 4
   m_MaskInteraction: 0
   m_Sprite: {fileID: -6470460504253458178, guid: 7e1c7920429c02548b0c16777a8cee3b, type: 3}
@@ -4631,7 +4633,7 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 6172183
-  m_SortingLayer: -1
+  m_SortingLayer: -2
   m_SortingOrder: 1
   m_MaskInteraction: 0
   m_Sprite: {fileID: -4178046375966092550, guid: e8daa2c4c50772f42b0a406a96ffb00b, type: 3}

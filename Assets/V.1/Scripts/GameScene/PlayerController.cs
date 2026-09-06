@@ -1,5 +1,7 @@
 using Unity.Cinemachine;
 using UnityEngine;
+using UnityEngine.UI; // 🔹 เพิ่มบรรทัดนี้เพื่อเรียกใช้ UI Image
+using System.Collections; // 🔹 เพิ่มบรรทัดนี้สำหรับ IEnumerator
 
 /// <summary>
 /// จัดการ input (one-button: กดค้าง/ปล่อย), movement, และเชื่อมกับ GumController
@@ -54,6 +56,13 @@ public class PlayerController : MonoBehaviour
 
     [Tooltip("ความแรงจอสั่นตอนตกด้วยความเร็วสูงสุด")]
     public float fallShakeAmplitude = 2.0f;
+
+    [Header("Damage Flash Effect")]
+    [Tooltip("UI Image สีดำเต็มจอ สำหรับกระพริบตอนโดนชนตัว")]
+    public Image blackFlashImage;
+
+    [Tooltip("ความเร็วในการจางหายของจอดำ (ค่ายิ่งเยอะยิ่งจางเร็ว)")]
+    public float flashFadeSpeed = 5f;
 
     private CinemachineBasicMultiChannelPerlin noiseComponent;
     private Rigidbody2D rb;
@@ -264,9 +273,40 @@ public class PlayerController : MonoBehaviour
     // --- เรียกจากระบบ Obstacle ---
 
     /// <summary>เรียกตอนโดน hitbox ตัว player (ไม่ใช่ hitbox gum)</summary>
+    /// <summary>เรียกตอนโดน hitbox ตัว player (ไม่ใช่ hitbox gum)</summary>
     public void OnHitByObstacleBody()
     {
+        // ทำให้ระบบมึนงงทางเกมเพลย์ทำงาน (หมากฝรั่งยุบ)
         gum?.TriggerDazed();
+
+        // สั่งกระพริบจอดำ
+        if (blackFlashImage != null)
+        {
+            StartCoroutine(FlashBlackRoutine());
+        }
+    }
+
+    private IEnumerator FlashBlackRoutine()
+    {
+        blackFlashImage.gameObject.SetActive(true);
+
+        // เซ็ตสีเป็นสีดำทึบ (Alpha = 1) ทันทีที่โดนชน
+        Color flashColor = Color.black;
+        flashColor.a = 1f;
+        blackFlashImage.color = flashColor;
+
+        // ค่อยๆ Fade กลับไปโปร่งใสตามความเร็ว flashFadeSpeed
+        while (blackFlashImage.color.a > 0.05f)
+        {
+            flashColor.a = Mathf.Lerp(flashColor.a, 0f, Time.deltaTime * flashFadeSpeed);
+            blackFlashImage.color = flashColor;
+            yield return null; // รอเฟรมถัดไป
+        }
+
+        // ปิด UI ทิ้งเมื่อจางหมดแล้ว
+        flashColor.a = 0f;
+        blackFlashImage.color = flashColor;
+        blackFlashImage.gameObject.SetActive(false);
     }
 
     /// <summary>เรียกตอนโดน hitbox gum โดยตรง</summary>

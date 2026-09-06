@@ -18,29 +18,27 @@ public class Obstacle : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D other)
     {
-        GumController gum = other.GetComponent<GumController>();
-        PlayerController player = other.GetComponent<PlayerController>();
-
-        // Case A: ชนโดนตัวหมากฝรั่งโดยตรง (Hit Gum) -> หมากฝรั่งแตก แต่ฟื้นตัวเร็ว!
-        if (gum != null && gum.currentState == GumController.GumState.Normal)
+        // 1. ถ้าชนโดนหมากฝรั่ง (ต้องตั้ง Tag ชิ้นส่วนหมากฝรั่งเป็น "Gum")
+        if (other.CompareTag("Gum"))
         {
-            Debug.Log("💥 Hit Gum -> Fast Recovery!");
-            gum.ForcePop(gum.fastStunDuration); // ฟื้นตัวเร็ว (1.5 วิ)
-            Destroy(gameObject);
-            return;
-        }
-
-        // Case B: ชนโดนตัวผู้เล่นโดยตรง (Hit Player) -> หมากฝรั่งแตก ฟื้นตัวช้า!
-        if (player != null)
-        {
-            Debug.Log("💥 Hit Player Body -> Normal (Slow) Recovery!");
-            GumController playerGum = player.GetComponentInChildren<GumController>();
-            if (playerGum != null && playerGum.currentState == GumController.GumState.Normal)
+            GumController gum = other.GetComponentInParent<GumController>();
+            if (gum != null && gum.currentState == GumController.GumState.Normal)
             {
-                playerGum.ForcePop(playerGum.normalStunDuration); // ฟื้นตัวปกติ (2.5 วิ)
+                Debug.Log("💥 โดนหมากฝรั่ง -> แตกแบบฟื้นตัวเร็ว!");
+                gum.ForcePop(gum.fastStunDuration);
             }
             Destroy(gameObject);
-            return;
+        }
+        // 2. ถ้าชนโดนผู้เล่น (ต้องตั้ง Tag ชิ้นส่วนคนเป็น "Player")
+        else if (other.CompareTag("Player"))
+        {
+            PlayerController player = other.GetComponentInParent<PlayerController>();
+            if (player != null)
+            {
+                Debug.Log("😵 โดนผู้เล่น -> มึน!");
+                player.OnHitByObstacleBody(); // เรียกฟังก์ชันมึนที่คุณเตรียมไว้
+            }
+            Destroy(gameObject);
         }
     }
 }
