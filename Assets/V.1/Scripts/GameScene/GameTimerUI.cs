@@ -1,17 +1,21 @@
 ﻿using UnityEngine;
 using TMPro;
+using UnityEngine.SceneManagement;
 
 public class GameTimerUI : MonoBehaviour
 {
     [Header("References")]
-    [Tooltip("ลาก UI หลอดความสูงมาใส่ตรงนี้")]
     public AltitudeProgressBarUI altitudeUI;
-
-    [Tooltip("ลาก UI Panel 'You Win!' มาใส่ตรงนี้")]
     public GameObject winPanel;
-
-    [Tooltip("ลาก UI Text ที่จะให้แสดงเวลามาใส่ตรงนี้")]
     public TextMeshProUGUI totalTimeText;
+
+    [Header("In-Game UI")]
+    [Tooltip("ลาก UI Text ที่จะโชว์เวลาตอนเล่น (มุมขวาบน) มาใส่ตรงนี้")]
+    public TextMeshProUGUI inGameTimeText; // 🔹 เพิ่มตัวแปรสำหรับเวลาหน้าจอหลัก
+
+    [Header("Menu Settings")]
+    [Tooltip("ใส่ชื่อ Scene ของหน้าเมนูหลักให้ตรงกันเป๊ะๆ (เช่น MainMenu)")]
+    public string mainMenuSceneName = "MainMenu";
 
     private float timer = 0f;
     private bool isFinished = false;
@@ -39,6 +43,14 @@ public class GameTimerUI : MonoBehaviour
         if (!isFinished)
         {
             timer += Time.deltaTime;
+
+            // 🔹 อัปเดตเวลาบนหน้าจอตอนเล่นเกมทุกๆ เฟรม
+            if (inGameTimeText != null)
+            {
+                int minutes = Mathf.FloorToInt(timer / 60f);
+                int seconds = Mathf.FloorToInt(timer % 60f);
+                inGameTimeText.text = $"Time: {minutes:00}:{seconds:00}";
+            }
         }
     }
 
@@ -57,5 +69,23 @@ public class GameTimerUI : MonoBehaviour
             int seconds = Mathf.FloorToInt(timer % 60f);
             totalTimeText.text = $"Total time : {minutes:00}:{seconds:00}";
         }
+
+        // 🔹 ซ่อนเวลาที่มุมจอตอนจบเกม เพื่อไม่ให้รกจอตอนหน้าต่าง Win เด้ง
+        if (inGameTimeText != null)
+        {
+            inGameTimeText.gameObject.SetActive(false);
+        }
+    }
+
+    public void RestartGame()
+    {
+        Time.timeScale = 1f;
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+    }
+
+    public void GoToMainMenu()
+    {
+        Time.timeScale = 1f;
+        SceneManager.LoadScene(mainMenuSceneName);
     }
 }
