@@ -77,15 +77,17 @@ public class GameTimerUI : MonoBehaviour
         }
     }
 
+    /// <summary>เรียกเมื่อกดปุ่ม "เล่นต่อ"</summary>
     public void RestartGame()
     {
-        Time.timeScale = 1f;
-        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+        Time.timeScale = 1f; // คืนค่าเวลาเกมให้กลับมาเดินปกติ
+        SceneManager.LoadScene(SceneManager.GetActiveScene().name); // โหลด Scene เดิมซ้ำ
     }
 
+    /// <summary>เรียกเมื่อกดปุ่ม "กลับเมนู"</summary>
     public void GoToMainMenu()
     {
-        Time.timeScale = 1f;
-        SceneManager.LoadScene(mainMenuSceneName);
+        Time.timeScale = 1f; // คืนค่าเวลาเกมให้กลับมาเดินปกติ
+        SceneManager.LoadScene("MainMenuV.1"); // โหลด Scene เมนู (อิงชื่อจาก PauseMenu ของคุณ)
     }
 }
