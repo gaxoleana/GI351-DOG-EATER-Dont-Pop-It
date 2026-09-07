@@ -157,8 +157,11 @@ MonoBehaviour:
   laserTrackDuration: 1
   laserHoldDuration: 0.5
   laserActiveDuration: 0.8
+  ultimateLaserCount: 3
+  ultimateLaserInterval: 0.25
   minAttackOffsetY: -4
   maxAttackOffsetY: 12
+  attackMoveSpeed: 12
 --- !u!82 &-6314016550611670613
 AudioSource:
   m_ObjectHideFlags: 0
