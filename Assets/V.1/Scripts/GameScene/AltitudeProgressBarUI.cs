@@ -105,7 +105,8 @@ public class AltitudeProgressBarUI : MonoBehaviour
         float currentKm = currentAltitude / 100f;
         if (altitudeText != null)
         {
-            altitudeText.text = $"{Mathf.FloorToInt(currentAltitude / 100):N0}km / {Mathf.FloorToInt(maxAltitude / 100):N0}km";
+            float maxKm = maxAltitude / 100f;
+            altitudeText.text = $"{currentKm:0.00} km / {maxKm:0.00} km";
         }
 
         // 5.5 เช็กปลดล็อก icon ตามระดับความสูง

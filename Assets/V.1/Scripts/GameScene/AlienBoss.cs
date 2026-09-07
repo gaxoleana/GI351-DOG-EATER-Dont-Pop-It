@@ -6,6 +6,13 @@ using System.Collections;
 /// </summary>
 public class AlienBoss : MonoBehaviour
 {
+    private enum AttackType
+    {
+        Normal,
+        Double,
+        Ultimate
+    }
+
     [Header("References")]
     [Tooltip("Transform ของผู้เล่น ใช้คำนวณตำแหน่งที่จะไล่ตาม")]
     public Transform playerTransform;
@@ -37,10 +44,6 @@ public class AlienBoss : MonoBehaviour
     [Tooltip("ระยะเวลาที่เลเซอร์ (collider จริง) ค้างอยู่บนจอก่อนจะ หายไป (วินาที) — ขยายเวลาเพิ่มขึ้นตรงนี้")]
     public float laserActiveDuration = 0.8f;
 
-    [Header("Attack Pattern")]
-    [Tooltip("จำนวนครั้งของการโจมตีปกติก่อนเข้าอันติ")]
-    public int normalAttackCountBeforeUltimate = 5;
-
     [Tooltip("จำนวนเลเซอร์ที่ยิงติดกันในช่วงอันติ")]
     public int ultimateLaserCount = 3;
 
@@ -57,7 +60,6 @@ public class AlienBoss : MonoBehaviour
     private float bobTimer;
     private float nextLaserTimer;
     private bool isAttacking;
-    private int normalAttacksCompleted;
 
     void Start()
     {
@@ -117,19 +119,26 @@ public class AlienBoss : MonoBehaviour
         nextLaserTimer -= Time.deltaTime;
         if (nextLaserTimer <= 0f)
         {
-            if (normalAttacksCompleted < normalAttackCountBeforeUltimate)
+            switch (GetRandomAttackType())
             {
-                normalAttacksCompleted++;
-                StartCoroutine(FireNormalLaserSequence());
-                ScheduleNextLaser();
+                case AttackType.Normal:
+                    StartCoroutine(FireStandardLaserSequence(1));
+                    break;
+                case AttackType.Double:
+                    StartCoroutine(FireStandardLaserSequence(2));
+                    break;
+                case AttackType.Ultimate:
+                    StartCoroutine(FireUltimateLaserSequence());
+                    break;
             }
-            else
-            {
-                normalAttacksCompleted = 0;
-                StartCoroutine(FireUltimateLaserSequence());
-                ScheduleNextLaser();
-            }
+
+            ScheduleNextLaser();
         }
+    }
+
+    private AttackType GetRandomAttackType()
+    {
+        return (AttackType)Random.Range(0, 3);
     }
 
     private void ScheduleNextLaser()
@@ -137,62 +146,63 @@ public class AlienBoss : MonoBehaviour
         nextLaserTimer = Random.Range(minLaserInterval, maxLaserInterval);
     }
 
-    private IEnumerator FireNormalLaserSequence()
+    private IEnumerator FireStandardLaserSequence(int laserCount)
     {
         if (playerTransform == null) yield break;
 
         isAttacking = true;
 
-        float attackOffsetY = Random.Range(minAttackOffsetY, maxAttackOffsetY);
         float fixedX = fixedRightX;
         Vector3 startPos = new Vector3(fixedX, transform.position.y, transform.position.z);
-        float trackedY = startPos.y;
+        float[] attackYs = new float[laserCount];
+        GameObject[] warningLines = new GameObject[laserCount];
 
-        GameObject warningLine = null;
-        if (laserWarningLinePrefab != null)
+        for (int index = 0; index < laserCount; index++)
         {
-            warningLine = Instantiate(laserWarningLinePrefab, startPos, Quaternion.identity);
+            attackYs[index] = playerTransform.position.y + Random.Range(minAttackOffsetY, maxAttackOffsetY);
+            if (laserWarningLinePrefab != null)
+            {
+                warningLines[index] = Instantiate(laserWarningLinePrefab, startPos, Quaternion.identity);
+            }
         }
 
-        // --- Phase 1: เส้นเตือนและ Alien ขยับแนวนอนทางขวาไปหา Y เป้าหมาย ---
+        // ล็อกเป้าหมายตามเวลาที่กำหนดก่อนยิง
+        float trackedY = startPos.y;
         float timer = 0f;
         while (timer < laserTrackDuration)
         {
             timer += Time.deltaTime;
             float progress = Mathf.Clamp01(timer / laserTrackDuration);
 
-            float targetY = playerTransform.position.y + attackOffsetY;
+            float targetY = playerTransform.position.y;
             trackedY = Mathf.Lerp(startPos.y, targetY, progress);
 
             Vector3 pos = new Vector3(fixedX, trackedY, transform.position.z);
             transform.position = pos;
 
-            if (warningLine != null)
+            for (int index = 0; index < laserCount; index++)
             {
-                warningLine.transform.position = pos;
+                if (warningLines[index] != null)
+                {
+                    Vector3 warningPosition = new Vector3(fixedX, attackYs[index], transform.position.z);
+                    warningLines[index].transform.position = warningPosition;
+                }
             }
 
             yield return null;
         }
 
-        // ล็อกตำแหน่ง Y
-        Vector3 lockedPos = new Vector3(fixedX, trackedY, transform.position.z);
-        transform.position = lockedPos;
-        if (warningLine != null)
-        {
-            warningLine.transform.position = lockedPos;
-        }
-
-        // --- Phase 2: หยุดนิ่ง ล็อกเป้า ---
         yield return new WaitForSeconds(laserHoldDuration);
 
-        if (warningLine != null)
+        for (int index = 0; index < laserCount; index++)
         {
-            Destroy(warningLine);
-        }
+            if (warningLines[index] != null)
+            {
+                Destroy(warningLines[index]);
+            }
 
-        // ยิงเลเซอร์
-        FreezeLaserBeam(fixedX, trackedY);
+            FreezeLaserBeam(fixedX, attackYs[index]);
+        }
 
         // รีเซ็ตความเร็ว Y ไม่ให้ Alien กระตุกตอนกลับเข้าสภาวะขยับปกติ
         yVelocity = 0f;
