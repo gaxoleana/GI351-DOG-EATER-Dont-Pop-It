@@ -19,9 +19,9 @@ public class AltitudeUI : MonoBehaviour
     [Tooltip("true = โชว์ค่าสูงสุดที่เคยขึ้นถึง (เหมือน score, ไม่ลดตอนร่วง) | false = โชว์ความสูงปัจจุบันตรง ๆ")]
     public bool trackHighestOnly = true;
 
-    [Tooltip("เกิน altitude เท่านี้ ให้เปลี่ยนหน่วยจาก m เป็น km อัตโนมัติ")]
+    [Tooltip("เกิน altitude เท่านี้ ให้เปลี่ยนหน่วยจาก m เป็น km อัตโนมัติ โดย 100 world units = 1 km")]
     public bool useKmAboveThreshold = true;
-    public float kmThreshold = 1000f;
+    public float kmThreshold = 100f;
 
     [Header("Goal (ใช้โชว์ % ความคืบหน้าถ้าต้องการ)")]
     [Tooltip("เป้าหมายของเกม (ตามดีไซน์ 3000m)")]
@@ -69,7 +69,7 @@ public class AltitudeUI : MonoBehaviour
     {
         if (useKmAboveThreshold && altitude >= kmThreshold)
         {
-            float km = altitude / 1000f;
+            float km = altitude / 100f;
             return $"{km:0.00} km";
         }
 

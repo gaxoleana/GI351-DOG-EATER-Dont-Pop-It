@@ -75,6 +75,7 @@ public class PlayerController : MonoBehaviour
     private Rigidbody2D rb;
     private bool isBlowInputHeld;
     private float defaultGravityScale;
+    private Coroutine damageFeedbackCoroutine;
 
     // สถานะพิเศษจากภายนอก เช่น Panic Event Blue (ห้ามกด)
     private bool inputLocked;
@@ -82,6 +83,7 @@ public class PlayerController : MonoBehaviour
     void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
+        defaultGravityScale = rb.gravityScale;
 
         if (vcam == null) vcam = FindAnyObjectByType<CinemachineCamera>();
         if (vcam != null)
@@ -287,8 +289,12 @@ public class PlayerController : MonoBehaviour
     {
         gum?.TriggerDazed();
 
-        // เริ่มแสดงเอฟเฟกต์จอดำและสั่น
-        StartCoroutine(DamageFeedbackRoutine());
+        // เริ่มแสดงเอฟเฟกต์จอดำและสั่น — หยุด Coroutine เดิมก่อน กันชนซ้ำเร็ว ๆ แล้ว Effect ซ้อนกัน
+        if (damageFeedbackCoroutine != null)
+        {
+            StopCoroutine(damageFeedbackCoroutine);
+        }
+        damageFeedbackCoroutine = StartCoroutine(DamageFeedbackRoutine());
     }
 
     private IEnumerator DamageFeedbackRoutine()

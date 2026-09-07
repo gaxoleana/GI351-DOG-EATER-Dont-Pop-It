@@ -88,6 +88,6 @@ public class GameTimerUI : MonoBehaviour
     public void GoToMainMenu()
     {
         Time.timeScale = 1f; // คืนค่าเวลาเกมให้กลับมาเดินปกติ
-        SceneManager.LoadScene("MainMenuV.1"); // โหลด Scene เมนู (อิงชื่อจาก PauseMenu ของคุณ)
+        SceneManager.LoadScene(mainMenuSceneName); // โหลด Scene เมนู (อิงชื่อจาก PauseMenu ของคุณ)
     }
 }
