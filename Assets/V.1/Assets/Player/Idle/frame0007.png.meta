@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: f2b7b13445df20846b2d2aab6737ffaf
+guid: 32f9e16c00f0c884894a0bdab888b39d
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 6527298236086400766
-    second: bubble0_0
+      213: -3047093270054505527
+    second: frame0007_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -51,7 +51,7 @@ TextureImporter:
   spriteMeshType: 1
   alignment: 0
   spritePivot: {x: 0.5, y: 0.5}
-  spritePixelsToUnits: 3000
+  spritePixelsToUnits: 2000
   spriteBorder: {x: 0, y: 0, z: 0, w: 0}
   spriteGenerateFallbackPhysicsShape: 1
   alphaUsage: 1
@@ -126,13 +126,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: bubble0_0
+      name: frame0007_0
       rect:
         serializedVersion: 2
-        x: 3092
-        y: 2272
-        width: 1088
-        height: 835
+        x: 2827
+        y: 485
+        width: 1293
+        height: 4029
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -141,8 +141,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: ef6b6f0a92f959a50800000000000000
-      internalID: 6527298236086400766
+      spriteID: 9c3fae8a0dc86b5d0800000000000000
+      internalID: -3047093270054505527
       vertices: []
       indices: 
       edges: []
@@ -161,7 +161,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      bubble0_0: 6527298236086400766
+      frame0007_0: -3047093270054505527
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

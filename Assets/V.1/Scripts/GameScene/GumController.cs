@@ -75,6 +75,9 @@ public class GumController : MonoBehaviour
     [Tooltip("Transform ของ sprite หมากฝรั่งที่จะ scale ตามขนาดจริง (ลาก sprite ลูกโป่งมาใส่)")]
     public Transform gumVisual;
 
+    [Tooltip("SpriteRenderer ของ GumRoot — ซ่อน/โชว์พร้อมกับ gum หลักเสมอ")]
+    public SpriteRenderer gumRootSpriteRenderer;
+
     [Tooltip("ลาก SpriteRenderer ของหมากฝรั่งมาใส่ช่องนี้")]
     public SpriteRenderer gumSpriteRenderer;
 
@@ -144,6 +147,7 @@ public class GumController : MonoBehaviour
     private float stateTimer;
     private float shakeTimer;
     private bool isForcedRecovery; // true ตอนแตกจาก ForcePop() กันไม่ให้ auto-recovery (popRecoveryTime) มาแย่งรีเซ็ตก่อนเวลา
+    private bool isGroundedHidden = false; // true ตอนติดพื้น ใช้ซ่อน gum โดยไม่แย่ง logic ของ Pop/Reset
 
     /// <summary>
     /// เรียกตอน spawn player เพื่อผูก transform สำหรับคำนวณ altitude
@@ -305,6 +309,31 @@ public class GumController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// เรียกจาก PlayerGroundAnimator ตอนตัวละครแตะ/ออกจากพื้น
+    /// ซ่อน gum + gumRoot ตอนอยู่พื้น โดยไม่ไปแย่ง logic ของ Pop/ForcePop/ResetGum
+    /// </summary>
+    public void SetGroundedHidden(bool hidden)
+    {
+        isGroundedHidden = hidden;
+        RefreshGumVisibility();
+    }
+
+    private void RefreshGumVisibility()
+    {
+        bool shouldShow = currentState == GumState.Normal && !isGroundedHidden;
+
+        if (gumSpriteRenderer != null)
+        {
+            gumSpriteRenderer.enabled = shouldShow;
+        }
+
+        if (gumRootSpriteRenderer != null)
+        {
+            gumRootSpriteRenderer.enabled = shouldShow;
+        }
+    }
+
     private float GetCurrentAltitude()
     {
         if (playerTransform == null) return 0f;
@@ -372,10 +401,14 @@ public class GumController : MonoBehaviour
         isForcedRecovery = false;
         FirePopShake();
 
-        // ปิด sprite เหมือนกับ ForcePop() ให้ทุกกรณีที่แตกดูสม่ำเสมอกันหมด
+        // ปิด sprite เหมือนกับ ForcePop() ให้ทุกกรณีที่แตกดูสม่ำเสมอ
         if (gumSpriteRenderer != null)
         {
             gumSpriteRenderer.enabled = false;
+        }
+        if (gumRootSpriteRenderer != null)
+        {
+            gumRootSpriteRenderer.enabled = false;
         }
 
         OnPop?.Invoke();
@@ -397,6 +430,10 @@ public class GumController : MonoBehaviour
         {
             gumSpriteRenderer.enabled = false;
         }
+        if (gumRootSpriteRenderer != null)
+        {
+            gumRootSpriteRenderer.enabled = false;
+        }
 
         // เรียก Coroutine ได้ตามปกติ ไม่ติด Error แล้ว
         StartCoroutine(RecoveryRoutine(duration));
@@ -412,13 +449,11 @@ public class GumController : MonoBehaviour
         // หดลงอีกรอบทันทีที่โผล่มา ดูเหมือนขนาดเพี้ยน/กระตุก
         currentSize = 0f;
 
-        // 🔹 แสดงรูปหมากฝรั่งกลับมา
-        if (gumSpriteRenderer != null)
-        {
-            gumSpriteRenderer.enabled = true;
-        }
-
         currentState = GumState.Normal;
+
+        // 🔹 แสดงรูปหมากฝรั่งกลับมา
+        RefreshGumVisibility();
+
         isForcedRecovery = false;
         OnGumReset?.Invoke(); // แจ้งระบบอื่นที่ฟัง event นี้อยู่ด้วย ให้สอดคล้องกับ path ปกติ
     }
@@ -428,11 +463,8 @@ public class GumController : MonoBehaviour
         currentSize = 0f;
         currentState = GumState.Normal;
 
-        // เปิด sprite กลับมา (คู่กับที่ Pop() สั่งปิดไว้)
-        if (gumSpriteRenderer != null)
-        {
-            gumSpriteRenderer.enabled = true;
-        }
+        // เปิด sprite กลับมา (คู่กับที่ Pop() สั่งปิดไว้) — เช็ค gumRoot ด้วย
+        RefreshGumVisibility();
 
         OnGumReset?.Invoke();
     }

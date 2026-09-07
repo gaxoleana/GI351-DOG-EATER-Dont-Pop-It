@@ -1,6 +1,5 @@
 using Unity.Cinemachine;
 using UnityEngine;
-using UnityEngine.UI; // 🔹 เพิ่มบรรทัดนี้เพื่อเรียกใช้ UI Image
 using System.Collections; // 🔹 เพิ่มบรรทัดนี้สำหรับ IEnumerator
 
 /// <summary>
@@ -57,16 +56,8 @@ public class PlayerController : MonoBehaviour
     [Tooltip("ความแรงจอสั่นตอนตกด้วยความเร็วสูงสุด")]
     public float fallShakeAmplitude = 2.0f;
 
-    [Header("Damage Flash Effect")]
-    [Tooltip("UI Image สีดำเต็มจอ สำหรับกระพริบตอนโดนชนตัว")]
-    public Image blackFlashImage;
-
-    [Tooltip("ความเร็วในการจางหายของจอดำ (ค่ายิ่งเยอะยิ่งจางเร็ว)")]
-    public float flashFadeSpeed = 5f;
-
     [Header("Damage Feedback")]
-    [Tooltip("UI Image สีดำเต็มจอ สำหรับกระพริบตอนโดนชนตัว")]
-    public float damageDuration = 3f; // ระยะเวลาจอดำและสั่น (3 วินาที)
+    public float damageDuration = 3f;
     public float damageShakeAmplitude = 4f; // ความแรงของการสั่นตอนโดนชน
 
     private bool isDamageShaking = false; // เอาไว้กันไม่ให้สั่นตีกับตอนตกลงมา
@@ -301,11 +292,6 @@ public class PlayerController : MonoBehaviour
     {
         isDamageShaking = true;
 
-        if (blackFlashImage != null)
-        {
-            blackFlashImage.gameObject.SetActive(true);
-        }
-
         float timer = 0f;
 
         while (timer < damageDuration)
@@ -315,15 +301,7 @@ public class PlayerController : MonoBehaviour
             // คำนวณความรุนแรง (intensity) จาก 1 ไป 0 ตามเวลา 3 วินาที
             float intensity = 1f - (timer / damageDuration);
 
-            // 1. ค่อยๆ ลดความดำของจอ
-            if (blackFlashImage != null)
-            {
-                Color flashColor = Color.black;
-                flashColor.a = intensity;
-                blackFlashImage.color = flashColor;
-            }
-
-            // 2. ค่อยๆ ลดความแรงของการสั่นกล้อง
+            // ค่อยๆ ลดความแรงของการสั่นกล้อง
             if (noiseComponent != null)
             {
                 noiseComponent.AmplitudeGain = damageShakeAmplitude * intensity;
@@ -333,41 +311,12 @@ public class PlayerController : MonoBehaviour
         }
 
         // รีเซ็ตค่ากลับเป็นปกติเมื่อครบ 3 วินาที
-        if (blackFlashImage != null)
-        {
-            blackFlashImage.color = new Color(0f, 0f, 0f, 0f);
-            blackFlashImage.gameObject.SetActive(false);
-        }
-
         if (noiseComponent != null)
         {
             noiseComponent.AmplitudeGain = 0f;
         }
 
         isDamageShaking = false;
-    }
-
-    private IEnumerator FlashBlackRoutine()
-    {
-        blackFlashImage.gameObject.SetActive(true);
-
-        // เซ็ตสีเป็นสีดำทึบ (Alpha = 1) ทันทีที่โดนชน
-        Color flashColor = Color.black;
-        flashColor.a = 1f;
-        blackFlashImage.color = flashColor;
-
-        // ค่อยๆ Fade กลับไปโปร่งใสตามความเร็ว flashFadeSpeed
-        while (blackFlashImage.color.a > 0.05f)
-        {
-            flashColor.a = Mathf.Lerp(flashColor.a, 0f, Time.deltaTime * flashFadeSpeed);
-            blackFlashImage.color = flashColor;
-            yield return null; // รอเฟรมถัดไป
-        }
-
-        // ปิด UI ทิ้งเมื่อจางหมดแล้ว
-        flashColor.a = 0f;
-        blackFlashImage.color = flashColor;
-        blackFlashImage.gameObject.SetActive(false);
     }
 
     /// <summary>เรียกตอนโดน hitbox gum โดยตรง</summary>
