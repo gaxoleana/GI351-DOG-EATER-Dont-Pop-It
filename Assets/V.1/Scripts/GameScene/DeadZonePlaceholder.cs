@@ -67,6 +67,8 @@ public class DeadZonePlaceholder : MonoBehaviour
     {
         if (gum == null) return;
 
+        transform.position = gum.DeadZoneCenter;
+
         float radius = gum.CurrentMaxVisualScale * radiusMultiplier;
 
         for (int i = 0; i < segments; i++)

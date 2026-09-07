@@ -151,34 +151,24 @@ public class ObstacleSpawner : MonoBehaviour
 
         // 3. สร้างเส้น Warning Line ณ ตำแหน่งเริ่มต้น
         GameObject warningLine = null;
+        float finalSpawnY = playerTransform.position.y + offsetY;
         if (warningLinePrefab != null)
         {
-            Vector3 initialPos = new Vector3(0f, playerTransform.position.y + offsetY, 0f);
+            Vector3 initialPos = new Vector3(0f, finalSpawnY, 0f);
             warningLine = Instantiate(warningLinePrefab, initialPos, Quaternion.identity);
         }
 
-        // 4. วนลูปให้เส้น Warning วิ่งตามตำแหน่ง Y ของ Player ตลอดช่วง warningDuration
+        // 4. รอช่วงเวลาเตือน โดยล็อก Warning Line ไว้ที่ตำแหน่งเดิม
         float timer = 0f;
         while (timer < warningDuration)
         {
             timer += Time.deltaTime;
-
-            if (warningLine != null && playerTransform != null)
-            {
-                // อัปเดตพิกัด Y ให้ขยับตาม Player Real-time
-                Vector3 trackedPos = warningLine.transform.position;
-                trackedPos.y = playerTransform.position.y + offsetY;
-                warningLine.transform.position = trackedPos;
-            }
-
             yield return null; // รอ Frame ถัดไป
         }
 
-        // 5. บันทึกตำแหน่ง Y ล่าสุด ณ จังหวะหมดเวลาเตือน แล้วทำลายเส้นเตือนทิ้ง
-        float finalSpawnY = playerTransform.position.y + offsetY;
+        // 5. ลบเส้นเตือน โดยใช้ตำแหน่งเดิมเป็นจุดเกิด Obstacle
         if (warningLine != null)
         {
-            finalSpawnY = warningLine.transform.position.y; // ล็อกค่า Y ล่าสุดของเส้นเตือน
             Destroy(warningLine);
         }
 

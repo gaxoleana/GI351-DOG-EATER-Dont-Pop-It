@@ -107,7 +107,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cba560734f9f08a4bb5c9b6394499f79, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Obstacle
-  speed: 32
+  speed: 24
   moveDirection: {x: 1, y: 0}
   lifeTime: 5
 --- !u!60 &5683294151538503041

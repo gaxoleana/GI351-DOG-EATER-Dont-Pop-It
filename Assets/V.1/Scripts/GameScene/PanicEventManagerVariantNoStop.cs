@@ -125,6 +125,10 @@ public class PanicEventManagerVariantNoStop : MonoBehaviour
     private CinemachineBasicMultiChannelPerlin noiseComponent;
     private float currentShakeAmplitude;
 
+    [Header("Vignette Effect")]
+    [Tooltip("ควบคุม Vignette ตอนเกิด Red/Blue Event")]
+    public PanicVignetteController panicVignetteController;
+
     [Header("Runtime Status (Read Only)")]
     public EventState currentState = EventState.Idle;
     public EventType currentEvent = EventType.None;
@@ -139,6 +143,8 @@ public class PanicEventManagerVariantNoStop : MonoBehaviour
     {
         if (player == null) player = FindAnyObjectByType<PlayerController>();
         if (gum == null) gum = FindAnyObjectByType<GumController>();
+        if (panicVignetteController == null) panicVignetteController = FindAnyObjectByType<PanicVignetteController>();
+
 
         if (vcam == null) vcam = FindAnyObjectByType<CinemachineCamera>();
         if (vcam != null)
@@ -293,12 +299,14 @@ public class PanicEventManagerVariantNoStop : MonoBehaviour
         currentMashes = 0;
 
         if (player != null) player.SetInputLocked(true);
+        if (panicVignetteController != null) panicVignetteController.SetVignetteActive(true);
 
         TriggerContinuousShake(activeShakeAmplitude);
 
         if (currentEvent == EventType.Red_Mash)
         {
             targetMashes = Random.Range(minTargetMashes, maxTargetMashes + 1);
+            if (panicVignetteController != null) panicVignetteController.SetVignetteColor(Color.red);
 
             if (redUIContainer != null)
             {
@@ -311,6 +319,8 @@ public class PanicEventManagerVariantNoStop : MonoBehaviour
             // 🎯 สุ่มระยะเวลา Blue Event (เช่น 1.5 ถึง 3.5 วินาที)
             currentBlueDuration = Random.Range(minBlueEventDuration, maxBlueEventDuration);
             stateTimer = currentBlueDuration;
+
+            if (panicVignetteController != null) panicVignetteController.SetVignetteColor(Color.blue);
 
             if (player != null)
             {
@@ -439,6 +449,8 @@ public class PanicEventManagerVariantNoStop : MonoBehaviour
             player.SetInputLocked(false);
             player.ResetGravity(); // 🔹 คืนค่าแรงโน้มถ่วงกลับเป็นระดับปกติทันทีเมื่อจบ Event
         }
+
+        if (panicVignetteController != null) panicVignetteController.SetVignetteActive(false);
 
         StopCameraShake();
         HideAllUI();

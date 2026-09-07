@@ -148,6 +148,30 @@ public class GumController : MonoBehaviour
     private float shakeTimer;
     private bool isForcedRecovery; // true ตอนแตกจาก ForcePop() กันไม่ให้ auto-recovery (popRecoveryTime) มาแย่งรีเซ็ตก่อนเวลา
     private bool isGroundedHidden = false; // true ตอนติดพื้น ใช้ซ่อน gum โดยไม่แย่ง logic ของ Pop/Reset
+    private Collider2D gumCollider;
+
+    public Vector3 DeadZoneCenter
+    {
+        get
+        {
+            if (gumSpriteRenderer != null)
+            {
+                return gumSpriteRenderer.bounds.center;
+            }
+
+            if (gumCollider == null)
+            {
+                gumCollider = GetComponent<Collider2D>();
+            }
+
+            if (gumCollider != null)
+            {
+                return gumCollider.bounds.center;
+            }
+
+            return gumVisual != null ? gumVisual.position : transform.position;
+        }
+    }
 
     /// <summary>
     /// เรียกตอน spawn player เพื่อผูก transform สำหรับคำนวณ altitude
@@ -246,6 +270,8 @@ public class GumController : MonoBehaviour
     private void UpdateDeadZoneRing(float sizeRatio, float pulse)
     {
         if (ringVisual == null) return;
+
+        ringVisual.position = DeadZoneCenter;
 
         // ขนาดวงแหวน = ตามขนาด gum ปัจจุบัน + ระยะห่างคงที่ (ringSizeMultiplier)
         float gumScale = currentState == GumState.Popped
