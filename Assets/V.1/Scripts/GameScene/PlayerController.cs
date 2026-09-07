@@ -196,7 +196,7 @@ public class PlayerController : MonoBehaviour
         else
         {
             // ร่วงอิสระ (ตอนปล่อย, ตอน Popped, ตอน Dazed)
-            velocity.y -= gravity * Time.fixedDeltaTime;
+            velocity.y -= gravity * rb.gravityScale * Time.fixedDeltaTime;
             velocity.y = Mathf.Max(velocity.y, -maxFallSpeed);
         }
 

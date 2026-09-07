@@ -94,8 +94,8 @@ public class PanicEventManagerVariantNoStop : MonoBehaviour
     [Tooltip("ระยะเวลาสูงสุดที่ต้องห้ามกดปุ่ม (วินาที)")]
     public float maxBlueEventDuration = 3.5f;
 
-    [Tooltip("ตัวคูณแรงโน้มถ่วงระหว่าง Blue Event (เช่น 0.4 = ตกช้าลงเหลือ 40% ของความเร็วปกติ)")]
-    public float blueEventGravityMultiplier = 0.4f;
+    [Tooltip("ตัวคูณแรงโน้มถ่วงระหว่าง Blue Event (0 = ลอยค้าง, ค่าน้อยมาก = ตกช้ามาก)")]
+    public float blueEventGravityMultiplier = 0.05f;
 
     [HideInInspector]
     public float currentBlueDuration; // เก็บเวลาที่สุ่มได้ในรอบนั้นๆ
@@ -324,11 +324,11 @@ public class PanicEventManagerVariantNoStop : MonoBehaviour
 
             if (player != null)
             {
-                // 1. ปรับ Gravity ให้ต่ำลง
+                // 1. ลด Gravity ให้เกือบเป็นศูนย์ ทำให้ผู้เล่นลอยอยู่กับที่
                 player.SetGravityMultiplier(blueEventGravityMultiplier);
 
-                // 2. 🔹 สั่งตัดความเร็วร่วงสะสมทันที ดึงให้ตกช้าๆ ตั้งแต่เฟรมแรกที่เริ่ม Event (ตั้งค่าความเร็ว Y ดิ่งได้ตามต้องการ)
-                player.DampDownwardVelocity(-1.0f);
+                // 2. ตัดความเร็วร่วงสะสมทันที ไม่ให้เริ่ม Event ด้วยการดิ่งลง
+                player.DampDownwardVelocity(0f);
             }
 
             if (blueUIContainer != null)

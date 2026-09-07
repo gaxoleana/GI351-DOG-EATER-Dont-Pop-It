@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 
 /// <summary>
-/// สปอว์น Obstacle จากขวาไปซ้ายอย่างเดียว แยกชนิดตามช่วงความสูง (Bird, Plane, Boss)
+/// สปอว์น Obstacle ตามช่วงความสูง (Bird, Plane, Boss) โดยให้นกสุ่มฝั่งและทิศทาง
 /// </summary>
 public class ObstacleSpawner : MonoBehaviour
 {
@@ -172,16 +172,30 @@ public class ObstacleSpawner : MonoBehaviour
             Destroy(warningLine);
         }
 
-        // 6. สปอว์น Obstacle จริง ณ พิกัด finalSpawnY แล้วปล่อยวิ่งจากขวาไปซ้ายตามปกติ
+        // 6. สปอว์น Obstacle จริง โดยให้นกสุ่มฝั่งและทิศทางทุกครั้งที่เกิด
         if (selectedPrefab != null && gum != null && gum.currentState == GumController.GumState.Normal)
         {
-            Vector3 spawnPos = new Vector3(spawnXRight, finalSpawnY, 0f);
+            bool isBird = selectedPrefab == birdPrefab;
+            bool spawnFromRight = !isBird || Random.value < 0.5f;
+            float spawnX = spawnFromRight ? spawnXRight : -spawnXRight;
+            Vector2 moveDirection = spawnFromRight ? Vector2.left : Vector2.right;
+
+            Vector3 spawnPos = new Vector3(spawnX, finalSpawnY, 0f);
             GameObject obsObj = Instantiate(selectedPrefab, spawnPos, Quaternion.identity);
 
             Obstacle obs = obsObj.GetComponent<Obstacle>();
             if (obs != null)
             {
-                obs.moveDirection = Vector2.left; // วิ่งตามแนวราบปกติ
+                obs.moveDirection = moveDirection;
+            }
+
+            if (isBird)
+            {
+                SpriteRenderer birdRenderer = obsObj.GetComponent<SpriteRenderer>();
+                if (birdRenderer != null)
+                {
+                    birdRenderer.flipX = !spawnFromRight;
+                }
             }
         }
     }

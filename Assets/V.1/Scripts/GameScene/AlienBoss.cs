@@ -37,6 +37,16 @@ public class AlienBoss : MonoBehaviour
     [Tooltip("ระยะเวลาที่เลเซอร์ (collider จริง) ค้างอยู่บนจอก่อนจะ หายไป (วินาที) — ขยายเวลาเพิ่มขึ้นตรงนี้")]
     public float laserActiveDuration = 0.8f;
 
+    [Header("Attack Pattern")]
+    [Tooltip("จำนวนครั้งของการโจมตีปกติก่อนเข้าอันติ")]
+    public int normalAttackCountBeforeUltimate = 5;
+
+    [Tooltip("จำนวนเลเซอร์ที่ยิงติดกันในช่วงอันติ")]
+    public int ultimateLaserCount = 3;
+
+    [Tooltip("ช่วงห่างระหว่างเลเซอร์แต่ละนัดในช่วงอันติ (วินาที)")]
+    public float ultimateLaserInterval = 0.25f;
+
     [Tooltip("offset แนวตั้งต่ำสุดจากตำแหน่งผู้เล่น")]
     public float minAttackOffsetY = -1f;
 
@@ -47,6 +57,7 @@ public class AlienBoss : MonoBehaviour
     private float bobTimer;
     private float nextLaserTimer;
     private bool isAttacking;
+    private int normalAttacksCompleted;
 
     void Start()
     {
@@ -101,11 +112,23 @@ public class AlienBoss : MonoBehaviour
 
     private void HandleLaserTimer()
     {
+        if (isAttacking) return;
+
         nextLaserTimer -= Time.deltaTime;
         if (nextLaserTimer <= 0f)
         {
-            StartCoroutine(FireLaserSequence());
-            ScheduleNextLaser();
+            if (normalAttacksCompleted < normalAttackCountBeforeUltimate)
+            {
+                normalAttacksCompleted++;
+                StartCoroutine(FireNormalLaserSequence());
+                ScheduleNextLaser();
+            }
+            else
+            {
+                normalAttacksCompleted = 0;
+                StartCoroutine(FireUltimateLaserSequence());
+                ScheduleNextLaser();
+            }
         }
     }
 
@@ -114,7 +137,7 @@ public class AlienBoss : MonoBehaviour
         nextLaserTimer = Random.Range(minLaserInterval, maxLaserInterval);
     }
 
-    private IEnumerator FireLaserSequence()
+    private IEnumerator FireNormalLaserSequence()
     {
         if (playerTransform == null) yield break;
 
@@ -173,6 +196,29 @@ public class AlienBoss : MonoBehaviour
 
         // รีเซ็ตความเร็ว Y ไม่ให้ Alien กระตุกตอนกลับเข้าสภาวะขยับปกติ
         yVelocity = 0f;
+        isAttacking = false;
+    }
+
+    private IEnumerator FireUltimateLaserSequence()
+    {
+        if (playerTransform == null) yield break;
+
+        isAttacking = true;
+
+        for (int shot = 0; shot < ultimateLaserCount; shot++)
+        {
+            float attackOffsetY = Random.Range(minAttackOffsetY, maxAttackOffsetY);
+            float targetY = playerTransform.position.y + attackOffsetY;
+
+            // อันติยิงทันทีโดยไม่มี warning line หรือช่วงล็อกเป้า
+            FreezeLaserBeam(fixedRightX, targetY);
+
+            if (shot < ultimateLaserCount - 1)
+            {
+                yield return new WaitForSeconds(ultimateLaserInterval);
+            }
+        }
+
         isAttacking = false;
     }
 
