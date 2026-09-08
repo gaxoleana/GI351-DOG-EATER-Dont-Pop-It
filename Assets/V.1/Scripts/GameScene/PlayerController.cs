@@ -82,6 +82,7 @@ public class PlayerController : MonoBehaviour
     private float rocketBoostSpeed;
     private float rocketBoostTargetY;
     private Coroutine rocketBoostCoroutine;
+    public float RocketBoostTimeRemaining { get; private set; }
 
     // สถานะพิเศษจากภายนอก เช่น Panic Event Blue (ห้ามกด)
     private bool inputLocked;
@@ -193,15 +194,18 @@ public class PlayerController : MonoBehaviour
         rocketBoostActive = true;
         rocketBoostTargetY = transform.position.y + Mathf.Abs(height);
         rocketBoostSpeed = Mathf.Abs(height) / Mathf.Max(0.1f, duration);
+        RocketBoostTimeRemaining = Mathf.Max(0f, duration);
         float timer = 0f;
 
         while (timer < duration)
         {
             timer += Time.deltaTime;
+            RocketBoostTimeRemaining = Mathf.Max(0f, duration - timer);
             yield return null;
         }
 
         rocketBoostActive = false;
+        RocketBoostTimeRemaining = 0f;
         rocketBoostSpeed = 0f;
         Vector2 velocity = rb.linearVelocity;
         velocity.y = 0f;

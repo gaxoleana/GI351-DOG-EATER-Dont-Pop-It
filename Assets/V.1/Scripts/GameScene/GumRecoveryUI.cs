@@ -26,7 +26,7 @@ public class GumRecoveryUI : MonoBehaviour
 
         if (isRecovering && recoveryText != null)
         {
-            recoveryText.text = $"{gum.RecoveryTimeRemaining:0.0}s";
+            recoveryText.text = $"Gum Recover: {gum.RecoveryTimeRemaining:0.0}s";
         }
     }
 
