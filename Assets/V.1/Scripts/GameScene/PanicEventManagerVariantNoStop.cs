@@ -201,6 +201,8 @@ public class PanicEventManagerVariantNoStop : MonoBehaviour
 
     private void UpdateIdleState()
     {
+        if (player == null) return;
+
         float currentAltitude = player.transform.position.y;
         if (currentAltitude >= startAltitude)
         {

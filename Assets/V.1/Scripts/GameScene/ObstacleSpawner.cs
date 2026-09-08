@@ -18,6 +18,7 @@ public class ObstacleSpawner : MonoBehaviour
     public GameObject cautionRightPrefab;
     public GameObject birdPrefab;
     public GameObject planePrefab;
+    public GameObject rocketPrefab;
 
     [Header("Boss")]
     [Tooltip("Prefab ของ AlienBoss (ต้องมี component AlienBoss ติดอยู่) — จะ spawn ครั้งเดียวตอนเข้า bossAltitude")]
@@ -48,6 +49,30 @@ public class ObstacleSpawner : MonoBehaviour
     [Tooltip("พิกัด X นอกจอฝั่งขวาสำหรับสปอว์น")]
     public float spawnXRight = 12f;
 
+    [Header("Plane Group Spawn")]
+    [Tooltip("จำนวนเครื่องบินขั้นต่ำต่อชุด")]
+    [Range(1, 3)]
+    public int minPlaneGroupSize = 1;
+
+    [Tooltip("จำนวนเครื่องบินสูงสุดต่อชุด")]
+    [Range(1, 3)]
+    public int maxPlaneGroupSize = 3;
+
+    [Tooltip("ระยะ Y ขั้นต่ำระหว่างเครื่องบินในชุด")]
+    public float planeVerticalGapMin = 10f;
+
+    [Tooltip("ระยะ Y สูงสุดระหว่างเครื่องบินในชุด")]
+    public float planeVerticalGapMax = 16f;
+
+    [Tooltip("เวลาระหว่างการแสดง Warning ของเครื่องบินแต่ละลำใน Group")]
+    public float planeWarningDelay = 0.5f;
+
+    [Header("Rocket Boost Spawn")]
+    public float rocketMinSpawnInterval = 12f;
+    public float rocketMaxSpawnInterval = 20f;
+    [Range(0f, 1f)]
+    public float rocketSpawnChance = 0.1f;
+
     [Header("Caution Position")]
     public float cautionXRight = 4f;
     public float cautionXLeft = -4f;
@@ -56,6 +81,7 @@ public class ObstacleSpawner : MonoBehaviour
     public bool isBossPhase = false;
 
     private float nextSpawnTimer;
+    private float nextRocketSpawnTimer;
 
     void Start()
     {
@@ -68,6 +94,7 @@ public class ObstacleSpawner : MonoBehaviour
         if (gum == null) gum = FindAnyObjectByType<GumController>();
 
         ResetSpawnTimer();
+        ResetRocketSpawnTimer();
     }
 
     void Update()
@@ -87,6 +114,19 @@ public class ObstacleSpawner : MonoBehaviour
                 SpawnAlienBoss();
             }
             return;
+        }
+
+        if (currentAltitude >= birdMinAltitude && rocketPrefab != null)
+        {
+            nextRocketSpawnTimer -= Time.deltaTime;
+            if (nextRocketSpawnTimer <= 0f)
+            {
+                if (Random.value <= rocketSpawnChance)
+                {
+                    StartCoroutine(SpawnRocketSequence());
+                }
+                ResetRocketSpawnTimer();
+            }
         }
 
         if (isBossPhase)
@@ -113,6 +153,65 @@ public class ObstacleSpawner : MonoBehaviour
 
         float currentInterval = Mathf.Lerp(maxSpawnInterval, minSpawnInterval, progressRatio);
         nextSpawnTimer = currentInterval;
+    }
+
+    private void ResetRocketSpawnTimer()
+    {
+        nextRocketSpawnTimer = Random.Range(
+            Mathf.Min(rocketMinSpawnInterval, rocketMaxSpawnInterval),
+            Mathf.Max(rocketMinSpawnInterval, rocketMaxSpawnInterval));
+    }
+
+    private IEnumerator SpawnRocketSequence()
+    {
+        float spawnY = playerTransform.position.y + Random.Range(minOffsetY, maxOffsetY);
+        GameObject warningLine = null;
+
+        if (warningLinePlanePrefab != null)
+        {
+            warningLine = Instantiate(
+                warningLinePlanePrefab,
+                new Vector3(0f, spawnY, 0f),
+                Quaternion.identity);
+
+            SpriteRenderer[] warningRenderers = warningLine.GetComponentsInChildren<SpriteRenderer>(true);
+            for (int i = 0; i < warningRenderers.Length; i++)
+            {
+                Color goldColor = warningRenderers[i].color;
+                goldColor.r = 1f;
+                goldColor.g = 0.75f;
+                goldColor.b = 0.05f;
+                warningRenderers[i].color = goldColor;
+            }
+        }
+
+        yield return new WaitForSeconds(warningDuration);
+
+        if (warningLine != null)
+        {
+            Destroy(warningLine);
+        }
+
+        if (rocketPrefab == null || playerTransform == null)
+        {
+            yield break;
+        }
+
+        bool fromRight = Random.value < 0.5f;
+        float spawnX = fromRight ? spawnXRight : -spawnXRight;
+        GameObject rocketObject = Instantiate(rocketPrefab, new Vector3(spawnX, spawnY, 0f), Quaternion.identity);
+
+        RocketPickup rocket = rocketObject.GetComponent<RocketPickup>();
+        if (rocket != null)
+        {
+            rocket.Initialize(fromRight ? Vector2.left : Vector2.right);
+        }
+
+        SpriteRenderer renderer = rocketObject.GetComponent<SpriteRenderer>();
+        if (renderer != null)
+        {
+            renderer.flipX = !fromRight;
+        }
     }
 
     /// <summary>
@@ -162,77 +261,120 @@ public class ObstacleSpawner : MonoBehaviour
         // สุ่มระยะ Offset Y จาก minOffsetY ถึง maxOffsetY
         float offsetY = Random.Range(minOffsetY, maxOffsetY);
         bool isBird = selectedPrefab == birdPrefab;
-        bool spawnFromRight = !isBird || Random.value < 0.5f;
-        float spawnX = spawnFromRight ? spawnXRight : -spawnXRight;
 
-        // 3. สร้างเส้น Warning Line ตามชนิดของ Obstacle
-        GameObject warningLine = null;
-        float finalSpawnY = playerTransform.position.y + offsetY;
+        int obstacleCount = isBird ? 1 : GetPlaneGroupSize();
+
+        bool[] spawnFromRights = new bool[obstacleCount];
+        float[] spawnXs = new float[obstacleCount];
+        for (int i = 0; i < obstacleCount; i++)
+        {
+            spawnFromRights[i] = Random.value < 0.5f;
+            spawnXs[i] = spawnFromRights[i] ? spawnXRight : -spawnXRight;
+        }
+
+        float[] spawnHeights = new float[obstacleCount];
+        spawnHeights[0] = playerTransform.position.y + offsetY;
+        for (int i = 1; i < obstacleCount; i++)
+        {
+            float gap = Random.Range(
+                Mathf.Min(planeVerticalGapMin, planeVerticalGapMax),
+                Mathf.Max(planeVerticalGapMin, planeVerticalGapMax));
+            spawnHeights[i] = spawnHeights[i - 1] + gap;
+        }
+
+        // 3. เตือนและ Spawn ทีละลำตามลำดับของ Group
         GameObject warningPrefab = isBird ? warningLinePrefab : warningLinePlanePrefab;
-        if (warningPrefab != null)
+        for (int i = 0; i < obstacleCount; i++)
         {
-            Vector3 initialPos = new Vector3(0f, finalSpawnY, 0f);
-            warningLine = Instantiate(warningPrefab, initialPos, Quaternion.identity);
-        }
-
-        GameObject cautionPrefab = spawnFromRight ? cautionRightPrefab : cautionLeftPrefab;
-        GameObject caution = null;
-        if (cautionPrefab != null)
-        {
-            float cautionX = spawnFromRight ? cautionXRight : cautionXLeft;
-            caution = Instantiate(cautionPrefab, new Vector3(cautionX, finalSpawnY, 0f), Quaternion.identity, transform);
-            caution.SetActive(false);
-        }
-
-        // 4. รอช่วงเวลาเตือน พร้อมกระพริบ Caution ฝั่งเดียวกับจุดเกิด
-        float timer = 0f;
-        float blinkTimer = 0f;
-        bool cautionVisible = false;
-        while (timer < warningDuration)
-        {
-            timer += Time.deltaTime;
-            blinkTimer += Time.deltaTime;
-            if (caution != null && blinkTimer >= cautionBlinkInterval)
+            GameObject warningLine = null;
+            if (warningPrefab != null)
             {
-                blinkTimer = 0f;
-                cautionVisible = !cautionVisible;
-                caution.SetActive(cautionVisible);
-            }
-            yield return null; // รอ Frame ถัดไป
-        }
-
-        // 5. ลบเส้นเตือน โดยใช้ตำแหน่งเดิมเป็นจุดเกิด Obstacle
-        if (warningLine != null)
-        {
-            Destroy(warningLine);
-        }
-        if (caution != null)
-        {
-            Destroy(caution);
-        }
-
-        // 6. สปอว์น Obstacle จริง โดยให้นกสุ่มฝั่งและทิศทางทุกครั้งที่เกิด
-        if (selectedPrefab != null && gum != null && gum.currentState == GumController.GumState.Normal)
-        {
-            Vector2 moveDirection = spawnFromRight ? Vector2.left : Vector2.right;
-
-            Vector3 spawnPos = new Vector3(spawnX, finalSpawnY, 0f);
-            GameObject obsObj = Instantiate(selectedPrefab, spawnPos, Quaternion.identity);
-
-            Obstacle obs = obsObj.GetComponent<Obstacle>();
-            if (obs != null)
-            {
-                obs.moveDirection = moveDirection;
+                Vector3 initialPos = new Vector3(0f, spawnHeights[i], 0f);
+                warningLine = Instantiate(warningPrefab, initialPos, Quaternion.identity);
             }
 
-            if (isBird)
+            GameObject caution = null;
+            GameObject cautionPrefab = spawnFromRights[i] ? cautionRightPrefab : cautionLeftPrefab;
+            if (cautionPrefab != null)
             {
-                SpriteRenderer birdRenderer = obsObj.GetComponent<SpriteRenderer>();
-                if (birdRenderer != null)
+                float cautionX = spawnFromRights[i] ? cautionXRight : cautionXLeft;
+                caution = Instantiate(
+                    cautionPrefab,
+                    new Vector3(cautionX, spawnHeights[i], 0f),
+                    Quaternion.identity,
+                    transform);
+                caution.SetActive(false);
+            }
+
+            // รอให้ Warning ของลำนี้ทำงานจนครบเวลา ก่อน Spawn ลำเดียวกัน
+            float timer = 0f;
+            float blinkTimer = 0f;
+            bool cautionVisible = false;
+            while (timer < warningDuration)
+            {
+                timer += Time.deltaTime;
+                blinkTimer += Time.deltaTime;
+                if (caution != null && blinkTimer >= cautionBlinkInterval)
                 {
-                    birdRenderer.flipX = !spawnFromRight;
+                    blinkTimer = 0f;
+                    cautionVisible = !cautionVisible;
+                    caution.SetActive(cautionVisible);
+                }
+                yield return null;
+            }
+
+            Destroy(warningLine);
+            Destroy(caution);
+
+            // Spawn เครื่องบินที่ตรงกับ Warning นี้ทันที
+            if (selectedPrefab != null && gum != null && gum.currentState == GumController.GumState.Normal)
+            {
+                Vector2 moveDirection = spawnFromRights[i] ? Vector2.left : Vector2.right;
+                Vector3 spawnPos = new Vector3(spawnXs[i], spawnHeights[i], 0f);
+                GameObject obsObj = Instantiate(selectedPrefab, spawnPos, Quaternion.identity);
+
+                Obstacle obs = obsObj.GetComponent<Obstacle>();
+                if (obs != null)
+                {
+                    obs.moveDirection = moveDirection;
+                }
+
+                SpriteRenderer obstacleRenderer = obsObj.GetComponent<SpriteRenderer>();
+                if (obstacleRenderer != null)
+                {
+                    obstacleRenderer.flipX = !spawnFromRights[i];
                 }
             }
+
+            if (i < obstacleCount - 1)
+            {
+                yield return new WaitForSeconds(Mathf.Max(0f, planeWarningDelay));
+            }
         }
+    }
+
+    private int GetPlaneGroupSize()
+    {
+        int minimum = Mathf.Clamp(Mathf.Min(minPlaneGroupSize, maxPlaneGroupSize), 1, 3);
+        int maximum = Mathf.Clamp(Mathf.Max(minPlaneGroupSize, maxPlaneGroupSize), 1, 3);
+
+        if (minimum == maximum) return minimum;
+
+        float roll = Random.value;
+        int selectedSize;
+        if (roll < 0.6f)
+        {
+            selectedSize = 1;
+        }
+        else if (roll < 0.9f)
+        {
+            selectedSize = 2;
+        }
+        else
+        {
+            selectedSize = 3;
+        }
+
+        return Mathf.Clamp(selectedSize, minimum, maximum);
     }
 }

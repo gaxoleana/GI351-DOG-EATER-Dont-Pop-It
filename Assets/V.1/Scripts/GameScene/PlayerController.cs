@@ -2,6 +2,7 @@ using Unity.Cinemachine;
 using UnityEngine;
 using UnityEngine.UI; // 🔹 เพิ่มบรรทัดนี้เพื่อเรียกใช้ UI Image
 using System.Collections; // 🔹 เพิ่มบรรทัดนี้สำหรับ IEnumerator
+using System.Collections.Generic;
 
 /// <summary>
 /// จัดการ input (one-button: กดค้าง/ปล่อย), movement, และเชื่อมกับ GumController
@@ -76,6 +77,11 @@ public class PlayerController : MonoBehaviour
     private bool isBlowInputHeld;
     private float defaultGravityScale;
     private Coroutine damageFeedbackCoroutine;
+    private readonly List<float> smokeLiftMultipliers = new List<float>();
+    private bool rocketBoostActive;
+    private float rocketBoostSpeed;
+    private float rocketBoostTargetY;
+    private Coroutine rocketBoostCoroutine;
 
     // สถานะพิเศษจากภายนอก เช่น Panic Event Blue (ห้ามกด)
     private bool inputLocked;
@@ -125,6 +131,26 @@ public class PlayerController : MonoBehaviour
 
     void FixedUpdate()
     {
+        if (rocketBoostActive)
+        {
+            Vector2 boostVelocity = rb.linearVelocity;
+            if (transform.position.y < rocketBoostTargetY)
+            {
+                boostVelocity.y = rocketBoostSpeed;
+            }
+            else
+            {
+                transform.position = new Vector3(
+                    transform.position.x,
+                    rocketBoostTargetY,
+                    transform.position.z);
+                boostVelocity.y = 0f;
+            }
+
+            rb.linearVelocity = boostVelocity;
+            return;
+        }
+
         ApplyMovement();
     }
 
@@ -148,6 +174,38 @@ public class PlayerController : MonoBehaviour
     public void SetInputLocked(bool locked)
     {
         inputLocked = locked;
+    }
+
+    public bool IsObstacleImmune => rocketBoostActive;
+
+    public void StartRocketBoost(float height = 50f, float duration = 2.5f)
+    {
+        if (rocketBoostCoroutine != null)
+        {
+            StopCoroutine(rocketBoostCoroutine);
+        }
+
+        rocketBoostCoroutine = StartCoroutine(RocketBoostRoutine(height, duration));
+    }
+
+    private IEnumerator RocketBoostRoutine(float height, float duration)
+    {
+        rocketBoostActive = true;
+        rocketBoostTargetY = transform.position.y + Mathf.Abs(height);
+        rocketBoostSpeed = Mathf.Abs(height) / Mathf.Max(0.1f, duration);
+        float timer = 0f;
+
+        while (timer < duration)
+        {
+            timer += Time.deltaTime;
+            yield return null;
+        }
+
+        rocketBoostActive = false;
+        rocketBoostSpeed = 0f;
+        Vector2 velocity = rb.linearVelocity;
+        velocity.y = 0f;
+        rb.linearVelocity = velocity;
     }
 
     private void UpdateGumFromInput()
@@ -189,6 +247,8 @@ public class PlayerController : MonoBehaviour
                 liftMultiplier *= thresholdGrowthFactor;
             }
 
+            liftMultiplier *= SmokeLiftMultiplier;
+
             float targetVelocityY = baseLiftForce * liftMultiplier;
 
             // ไล่ velocity เข้าหาเป้าหมายทีละนิด แทนการ snap ทันที
@@ -203,6 +263,30 @@ public class PlayerController : MonoBehaviour
         }
 
         rb.linearVelocity = velocity;
+    }
+
+    private float SmokeLiftMultiplier
+    {
+        get
+        {
+            float multiplier = 1f;
+            for (int i = 0; i < smokeLiftMultipliers.Count; i++)
+            {
+                multiplier = Mathf.Min(multiplier, smokeLiftMultipliers[i]);
+            }
+
+            return multiplier;
+        }
+    }
+
+    public void EnterSmoke(float liftMultiplier)
+    {
+        smokeLiftMultipliers.Add(Mathf.Clamp01(liftMultiplier));
+    }
+
+    public void ExitSmoke(float liftMultiplier)
+    {
+        smokeLiftMultipliers.Remove(Mathf.Clamp01(liftMultiplier));
     }
 
     /// <summary>

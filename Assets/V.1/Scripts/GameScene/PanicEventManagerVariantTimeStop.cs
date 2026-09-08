@@ -39,14 +39,14 @@ public class PanicEventManagerVariantTimeStop : MonoBehaviour
     public float mashLiftImpulse = 2.5f; // คงไว้เพื่อไม่ให้ Inspector แจ้งเตือน (แต่จะไม่ได้ใช้งานแล้ว)
     public int minTargetMashes = 3;
     public int maxTargetMashes = 12;
-    [HideInInspector] public int targetMashes; 
+    [HideInInspector] public int targetMashes;
 
     [Header("Blue Event (Hold Off) Settings")]
     public float blueEventDuration = 3.0f;
     public float minBlueEventDuration = 1.5f;
     public float maxBlueEventDuration = 3.5f;
     public float blueEventGravityMultiplier = 0.4f;
-    [HideInInspector] public float currentBlueDuration; 
+    [HideInInspector] public float currentBlueDuration;
 
     [Header("Active Event UI Feedback")]
     public GameObject redUIContainer;
@@ -134,6 +134,8 @@ public class PanicEventManagerVariantTimeStop : MonoBehaviour
 
     private void UpdateIdleState()
     {
+        if (player == null) return;
+
         float currentAltitude = player.transform.position.y;
         if (currentAltitude >= startAltitude)
         {
@@ -267,7 +269,7 @@ public class PanicEventManagerVariantTimeStop : MonoBehaviour
 
     private void UpdateRedEvent()
     {
-        stateTimer -= Time.unscaledDeltaTime; 
+        stateTimer -= Time.unscaledDeltaTime;
 
         if (Input.GetMouseButtonDown(0) || Input.GetKeyDown(KeyCode.Space))
         {
@@ -302,7 +304,7 @@ public class PanicEventManagerVariantTimeStop : MonoBehaviour
 
     private void UpdateBlueEvent()
     {
-        stateTimer -= Time.unscaledDeltaTime; 
+        stateTimer -= Time.unscaledDeltaTime;
 
         if (blueTimerText != null)
         {
@@ -338,7 +340,7 @@ public class PanicEventManagerVariantTimeStop : MonoBehaviour
 
     private void EndEvent(bool success)
     {
-        Time.timeScale = 1f; 
+        Time.timeScale = 1f;
 
         if (warningAnimCoroutine != null)
         {
@@ -358,10 +360,10 @@ public class PanicEventManagerVariantTimeStop : MonoBehaviour
         if (player != null)
         {
             player.SetInputLocked(false);
-            player.ResetGravity(); 
+            player.ResetGravity();
         }
 
-        PlayResultShake(); 
+        PlayResultShake();
         HideAllUI();
         ResetCooldown();
     }
@@ -397,7 +399,7 @@ public class PanicEventManagerVariantTimeStop : MonoBehaviour
     {
         if (noiseComponent != null)
         {
-            noiseComponent.AmplitudeGain = mashShakePulse; 
+            noiseComponent.AmplitudeGain = mashShakePulse;
             float t = 0f;
             while (t < 0.5f)
             {

@@ -149,6 +149,12 @@ public class GumController : MonoBehaviour
     private bool isForcedRecovery; // true ตอนแตกจาก ForcePop() กันไม่ให้ auto-recovery (popRecoveryTime) มาแย่งรีเซ็ตก่อนเวลา
     private bool isGroundedHidden = false; // true ตอนติดพื้น ใช้ซ่อน gum โดยไม่แย่ง logic ของ Pop/Reset
     private Collider2D gumCollider;
+    private float recoveryDuration;
+    private float recoveryStartTime;
+
+    /// <summary>เวลาที่เหลือ (วินาที) ก่อนจะเป่าได้ใหม่ — 0 ถ้าไม่ได้อยู่ในสถานะ Popped</summary>
+    public float RecoveryTimeRemaining =>
+        currentState == GumState.Popped ? Mathf.Max(0f, recoveryDuration - (Time.time - recoveryStartTime)) : 0f;
 
     public Vector3 DeadZoneCenter
     {
@@ -425,6 +431,8 @@ public class GumController : MonoBehaviour
         currentState = GumState.Popped;
         stateTimer = 0f;
         isForcedRecovery = false;
+        recoveryDuration = popRecoveryTime;
+        recoveryStartTime = Time.time;
         FirePopShake();
 
         // ปิด sprite เหมือนกับ ForcePop() ให้ทุกกรณีที่แตกดูสม่ำเสมอ
@@ -450,6 +458,8 @@ public class GumController : MonoBehaviour
         currentState = GumState.Popped;
         isForcedRecovery = true;
         float duration = (customStunDuration > 0f) ? customStunDuration : normalStunDuration;
+        recoveryDuration = duration;
+        recoveryStartTime = Time.time;
 
         // 🔹 ซ่อนรูปหมากฝรั่ง (ตัว GameObject และ Coroutine ยังทำงานต่อได้ปกติ)
         if (gumSpriteRenderer != null)
