@@ -80,6 +80,8 @@ public class PlayerController : MonoBehaviour
     // สถานะพิเศษจากภายนอก เช่น Panic Event Blue (ห้ามกด)
     private bool inputLocked;
 
+    public bool IsInputLocked => inputLocked;
+
     void Awake()
     {
         rb = GetComponent<Rigidbody2D>();

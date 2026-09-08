@@ -4,7 +4,7 @@ using System.Collections;
 /// <summary>
 /// Alien Boss — อยู่ติดขอบขวาของจอตลอดเวลา ลอยตามแกน Y ของผู้เล่น แล้วยิงเลเซอร์
 /// </summary>
-public class AlienBoss : MonoBehaviour
+public class AlienBossV0 : MonoBehaviour
 {
     [Header("References")]
     [Tooltip("Transform ของผู้เล่น ใช้คำนวณตำแหน่งที่จะไล่ตาม")]

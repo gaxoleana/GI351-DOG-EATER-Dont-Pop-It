@@ -1,11 +1,13 @@
 ﻿using UnityEngine;
 using TMPro;
 using UnityEngine.SceneManagement;
+using System.Collections;
 
 public class GameTimerUI : MonoBehaviour
 {
     [Header("References")]
     public AltitudeProgressBarUI altitudeUI;
+    public PlayerController player;
     public GameObject winPanel;
     public TextMeshProUGUI totalTimeText;
 
@@ -17,11 +19,18 @@ public class GameTimerUI : MonoBehaviour
     [Tooltip("ใส่ชื่อ Scene ของหน้าเมนูหลักให้ตรงกันเป๊ะๆ (เช่น MainMenu)")]
     public string mainMenuSceneName = "MainMenu";
 
+    [Header("Win Slowdown")]
+    [Tooltip("เวลาจริงที่ให้ Player ลอยต่อหลังถึงเส้นชัย")]
+    public float winFloatDuration = 0.75f;
+    [Tooltip("เวลาจริงที่ใช้ลด Time.timeScale ลงจนหยุด")]
+    public float winSlowdownDuration = 0.75f;
+
     private float timer = 0f;
     private bool isFinished = false;
 
     void Start()
     {
+        if (player == null) player = FindAnyObjectByType<PlayerController>();
         if (winPanel != null) winPanel.SetActive(false);
 
         if (altitudeUI != null)
@@ -58,6 +67,28 @@ public class GameTimerUI : MonoBehaviour
     {
         if (isFinished) return;
         isFinished = true;
+
+        if (player != null)
+        {
+            player.SetInputLocked(true);
+        }
+
+        StartCoroutine(FinishGameRoutine());
+    }
+
+    private IEnumerator FinishGameRoutine()
+    {
+        Time.timeScale = 1f;
+        yield return new WaitForSecondsRealtime(winFloatDuration);
+
+        float elapsed = 0f;
+        float duration = Mathf.Max(0.01f, winSlowdownDuration);
+        while (elapsed < duration)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            Time.timeScale = Mathf.Lerp(1f, 0f, Mathf.Clamp01(elapsed / duration));
+            yield return null;
+        }
 
         Time.timeScale = 0f;
 

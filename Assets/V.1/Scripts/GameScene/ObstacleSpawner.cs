@@ -13,6 +13,9 @@ public class ObstacleSpawner : MonoBehaviour
 
     [Header("Prefabs")]
     public GameObject warningLinePrefab;
+    public GameObject warningLinePlanePrefab;
+    public GameObject cautionLeftPrefab;
+    public GameObject cautionRightPrefab;
     public GameObject birdPrefab;
     public GameObject planePrefab;
 
@@ -34,6 +37,7 @@ public class ObstacleSpawner : MonoBehaviour
 
     [Header("Warning & Spawn Position")]
     public float warningDuration = 1.0f;
+    public float cautionBlinkInterval = 0.15f;
 
     [Tooltip("ระยะ Offset Y ต่ำสุด (ตั้งเป็น 0 = ระดับเดียวกับตัวละคร)")]
     public float minOffsetY = 0f;
@@ -43,6 +47,10 @@ public class ObstacleSpawner : MonoBehaviour
 
     [Tooltip("พิกัด X นอกจอฝั่งขวาสำหรับสปอว์น")]
     public float spawnXRight = 12f;
+
+    [Header("Caution Position")]
+    public float cautionXRight = 4f;
+    public float cautionXLeft = -4f;
 
     [Header("Runtime Status")]
     public bool isBossPhase = false;
@@ -79,6 +87,11 @@ public class ObstacleSpawner : MonoBehaviour
                 SpawnAlienBoss();
             }
             return;
+        }
+
+        if (isBossPhase)
+        {
+            isBossPhase = false;
         }
 
         // 2. ลูปสปอว์นอุปสรรคปกติ (เริ่มทำงานตั้งแต่ 100m ขึ้นไป)
@@ -145,24 +158,46 @@ public class ObstacleSpawner : MonoBehaviour
 
         GameObject selectedPrefab = availablePrefabs[Random.Range(0, availablePrefabs.Count)];
 
-        // 2. สุ่มระยะ Offset Y สัมพันธ์กับตัวละคร (เช่น สุ่มเกิดช่วงเหนือหัว หรือระดับตัว)
+        // 2. สุ่มระยะ Offset Y และเลือกฝั่งเกิดก่อนสร้างสัญญาณเตือน
         // สุ่มระยะ Offset Y จาก minOffsetY ถึง maxOffsetY
         float offsetY = Random.Range(minOffsetY, maxOffsetY);
+        bool isBird = selectedPrefab == birdPrefab;
+        bool spawnFromRight = !isBird || Random.value < 0.5f;
+        float spawnX = spawnFromRight ? spawnXRight : -spawnXRight;
 
-        // 3. สร้างเส้น Warning Line ณ ตำแหน่งเริ่มต้น
+        // 3. สร้างเส้น Warning Line ตามชนิดของ Obstacle
         GameObject warningLine = null;
         float finalSpawnY = playerTransform.position.y + offsetY;
-        if (warningLinePrefab != null)
+        GameObject warningPrefab = isBird ? warningLinePrefab : warningLinePlanePrefab;
+        if (warningPrefab != null)
         {
             Vector3 initialPos = new Vector3(0f, finalSpawnY, 0f);
-            warningLine = Instantiate(warningLinePrefab, initialPos, Quaternion.identity);
+            warningLine = Instantiate(warningPrefab, initialPos, Quaternion.identity);
         }
 
-        // 4. รอช่วงเวลาเตือน โดยล็อก Warning Line ไว้ที่ตำแหน่งเดิม
+        GameObject cautionPrefab = spawnFromRight ? cautionRightPrefab : cautionLeftPrefab;
+        GameObject caution = null;
+        if (cautionPrefab != null)
+        {
+            float cautionX = spawnFromRight ? cautionXRight : cautionXLeft;
+            caution = Instantiate(cautionPrefab, new Vector3(cautionX, finalSpawnY, 0f), Quaternion.identity, transform);
+            caution.SetActive(false);
+        }
+
+        // 4. รอช่วงเวลาเตือน พร้อมกระพริบ Caution ฝั่งเดียวกับจุดเกิด
         float timer = 0f;
+        float blinkTimer = 0f;
+        bool cautionVisible = false;
         while (timer < warningDuration)
         {
             timer += Time.deltaTime;
+            blinkTimer += Time.deltaTime;
+            if (caution != null && blinkTimer >= cautionBlinkInterval)
+            {
+                blinkTimer = 0f;
+                cautionVisible = !cautionVisible;
+                caution.SetActive(cautionVisible);
+            }
             yield return null; // รอ Frame ถัดไป
         }
 
@@ -171,13 +206,14 @@ public class ObstacleSpawner : MonoBehaviour
         {
             Destroy(warningLine);
         }
+        if (caution != null)
+        {
+            Destroy(caution);
+        }
 
         // 6. สปอว์น Obstacle จริง โดยให้นกสุ่มฝั่งและทิศทางทุกครั้งที่เกิด
         if (selectedPrefab != null && gum != null && gum.currentState == GumController.GumState.Normal)
         {
-            bool isBird = selectedPrefab == birdPrefab;
-            bool spawnFromRight = !isBird || Random.value < 0.5f;
-            float spawnX = spawnFromRight ? spawnXRight : -spawnXRight;
             Vector2 moveDirection = spawnFromRight ? Vector2.left : Vector2.right;
 
             Vector3 spawnPos = new Vector3(spawnX, finalSpawnY, 0f);

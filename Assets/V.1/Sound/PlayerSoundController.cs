@@ -17,12 +17,17 @@ public class PlayerSoundController : MonoBehaviour
     [Tooltip("AudioSource เฉพาะสำหรับเสียง one-shot เช่น Pop")]
     [SerializeField] private AudioSource sfxSource;
 
+    private PlayerController player;
+
     private bool wasHolding = false;
     private bool isSubscribed = false;
     private bool isBlowPlaying = false; // เช็คสถานะเอง แทนการพึ่ง audioSource.isPlaying
 
     private void Start()
     {
+        player = GetComponent<PlayerController>();
+        if (player == null) player = FindAnyObjectByType<PlayerController>();
+
         if (gum == null) gum = GetComponent<GumController>();
         if (gum == null) gum = FindAnyObjectByType<GumController>();
 
@@ -48,7 +53,9 @@ public class PlayerSoundController : MonoBehaviour
     private void Update()
     {
         bool rawInput = Input.GetMouseButton(0) || Input.GetKey(KeyCode.Space);
-        bool isHolding = rawInput && (gum == null || gum.CanBlow());
+        bool isHolding = rawInput
+            && (player == null || !player.IsInputLocked)
+            && (gum == null || gum.CanBlow());
 
         if (isHolding && !wasHolding)
         {

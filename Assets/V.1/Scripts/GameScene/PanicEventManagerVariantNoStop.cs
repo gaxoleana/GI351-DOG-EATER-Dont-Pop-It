@@ -353,6 +353,7 @@ public class PanicEventManagerVariantNoStop : MonoBehaviour
     private void UpdateRedEvent()
     {
         stateTimer -= Time.deltaTime;
+        UpdateRedUI();
 
         // ตรวจจับจังหวะกดปุ่ม
         if (Input.GetMouseButtonDown(0) || Input.GetKeyDown(KeyCode.Space))
@@ -499,7 +500,7 @@ public class PanicEventManagerVariantNoStop : MonoBehaviour
         }
         if (redCountText != null)
         {
-            redCountText.text = $"{currentMashes}/{targetMashes}";
+            redCountText.text = $"{currentMashes}/{targetMashes}  {Mathf.Max(0f, stateTimer):0.0}s";
         }
     }
 

@@ -46,8 +46,24 @@ public class AlienBoss : MonoBehaviour
     [Tooltip("จำนวนเลเซอร์ที่ยิงติดกันในช่วงอันติ")]
     public int ultimateLaserCount = 3;
 
+    [Tooltip("เวลาที่ Alien ใช้เล็งระดับใหม่ของแต่ละนัดในช่วงอันติ")]
+    public float ultimateTrackDuration = 0.2f;
+
+    [Tooltip("เวลาล็อกระดับก่อนยิงแต่ละนัดในช่วงอันติ")]
+    public float ultimateHoldDuration = 0.05f;
+
     [Tooltip("ช่วงห่างระหว่างเลเซอร์แต่ละนัดในช่วงอันติ (วินาที)")]
-    public float ultimateLaserInterval = 0.25f;
+    public float ultimateLaserInterval = 0.1f;
+
+    [Header("Ultimate Warning")]
+    [Tooltip("Prefab/child Angry ที่จะกระพริบก่อนเริ่ม Ultimate")]
+    public Transform angryWarningTransform;
+
+    [Tooltip("ระยะเวลาเตือนก่อนยิง Ultimate")]
+    public float ultimateWarningDuration = 1f;
+
+    [Tooltip("ช่วงเวลาสลับเปิด/ปิด Angry ระหว่างกระพริบ")]
+    public float ultimateWarningBlinkInterval = 0.15f;
 
     [Tooltip("ระยะสุ่มแนวตั้งต่ำสุดจากตำแหน่งผู้เล่น")]
     public float minAttackOffsetY = -4f;
@@ -58,10 +74,14 @@ public class AlienBoss : MonoBehaviour
     [Tooltip("ความเร็วที่ Alien เคลื่อนเข้าหาระดับโจมตี (หน่วยต่อวินาที)")]
     public float attackMoveSpeed = 8f;
 
+    [Tooltip("ความสูงต่ำสุดของ Player ก่อน Alien จะถูกทำลาย โดย 100 world units = 1 km")]
+    public float despawnAltitude = 2000f;
+
     private float yVelocity;
     private float bobTimer;
     private float nextLaserTimer;
     private bool isAttacking;
+    private bool isUltimateWarning;
 
     void Start()
     {
@@ -71,12 +91,19 @@ public class AlienBoss : MonoBehaviour
             if (player != null) playerTransform = player.transform;
         }
 
+        SetAngryWarning(false);
         ScheduleNextLaser();
     }
 
     void Update()
     {
         if (playerTransform == null) return;
+
+        if (playerTransform.position.y < despawnAltitude)
+        {
+            Destroy(gameObject);
+            return;
+        }
 
         // คงเหลือเฉพาะระบบจับเวลาเลเซอร์ไว้ใน Update
         HandleLaserTimer();
@@ -116,7 +143,7 @@ public class AlienBoss : MonoBehaviour
 
     private void HandleLaserTimer()
     {
-        if (isAttacking) return;
+        if (isAttacking || isUltimateWarning) return;
 
         nextLaserTimer -= Time.deltaTime;
         if (nextLaserTimer <= 0f)
@@ -151,10 +178,10 @@ public class AlienBoss : MonoBehaviour
 
         isAttacking = true;
 
+        float attackOffsetY = Random.Range(minAttackOffsetY, maxAttackOffsetY);
         float fixedX = fixedRightX;
         Vector3 startPos = new Vector3(fixedX, transform.position.y, transform.position.z);
-        float attackOffsetY = Random.Range(minAttackOffsetY, maxAttackOffsetY);
-        float attackY = transform.position.y;
+        float trackedY = startPos.y;
         GameObject warningLine = null;
 
         if (laserWarningLinePrefab != null)
@@ -162,41 +189,31 @@ public class AlienBoss : MonoBehaviour
             warningLine = Instantiate(laserWarningLinePrefab, startPos, Quaternion.identity);
         }
 
-        // Alien ไล่ตาม Player + offset แบบค่อย ๆ ขยับ และเส้นเตือนอยู่ระดับเดียวกับ Alien เสมอ
+        // Match V0: track the player's predicted attack height during the warning phase.
         float timer = 0f;
         while (timer < laserTrackDuration)
         {
             timer += Time.deltaTime;
-            attackY = playerTransform.position.y + attackOffsetY;
-            MoveAlienToAttackHeight(fixedX, attackY);
+            float progress = Mathf.Clamp01(timer / laserTrackDuration);
+            float targetY = playerTransform.position.y + attackOffsetY;
+            trackedY = Mathf.Lerp(startPos.y, targetY, progress);
+
+            Vector3 position = new Vector3(fixedX, trackedY, transform.position.z);
+            transform.position = position;
 
             if (warningLine != null)
             {
-                warningLine.transform.position = transform.position;
+                warningLine.transform.position = position;
             }
 
             yield return null;
         }
 
-        // ล็อกเป้าหมายสุดท้าย แล้วให้ Alien กับเส้นเตือนหยุดระดับเดียวกันก่อนยิง
-        attackY = playerTransform.position.y + attackOffsetY;
-
-        while (!Mathf.Approximately(transform.position.y, attackY))
-        {
-            MoveAlienToAttackHeight(fixedX, attackY);
-
-            if (warningLine != null)
-            {
-                warningLine.transform.position = transform.position;
-            }
-
-            yield return null;
-        }
-
-        attackY = transform.position.y;
+        Vector3 lockedPosition = new Vector3(fixedX, trackedY, transform.position.z);
+        transform.position = lockedPosition;
         if (warningLine != null)
         {
-            warningLine.transform.position = transform.position;
+            warningLine.transform.position = lockedPosition;
         }
 
         yield return new WaitForSeconds(laserHoldDuration);
@@ -206,32 +223,44 @@ public class AlienBoss : MonoBehaviour
             Destroy(warningLine);
         }
 
-        FreezeLaserBeam(fixedX, attackY);
+        FreezeLaserBeam(fixedX, trackedY);
 
         // รีเซ็ตความเร็ว Y ไม่ให้ Alien กระตุกตอนกลับเข้าสภาวะขยับปกติ
         yVelocity = 0f;
         isAttacking = false;
     }
 
-    private void MoveAlienToAttackHeight(float x, float targetY)
-    {
-        float nextY = Mathf.MoveTowards(transform.position.y, targetY, attackMoveSpeed * Time.deltaTime);
-        transform.position = new Vector3(x, nextY, transform.position.z);
-    }
-
     private IEnumerator FireUltimateLaserSequence()
     {
         if (playerTransform == null) yield break;
 
+        yield return StartCoroutine(PlayUltimateWarning());
+
         isAttacking = true;
 
+        float fixedX = fixedRightX;
         for (int shot = 0; shot < ultimateLaserCount; shot++)
         {
             float attackOffsetY = Random.Range(minAttackOffsetY, maxAttackOffsetY);
             float targetY = playerTransform.position.y + attackOffsetY;
+            float startY = transform.position.y;
+            float trackedY = startY;
+            float timer = 0f;
 
-            // อันติยิงทันทีโดยไม่มี warning line หรือช่วงล็อกเป้า
-            FreezeLaserBeam(fixedRightX, targetY);
+            // Each shot gets its own locked target height. No warning line is shown.
+            while (timer < ultimateTrackDuration)
+            {
+                timer += Time.deltaTime;
+                float progress = Mathf.Clamp01(timer / ultimateTrackDuration);
+                trackedY = Mathf.Lerp(startY, targetY, progress);
+                transform.position = new Vector3(fixedX, trackedY, transform.position.z);
+                yield return null;
+            }
+
+            transform.position = new Vector3(fixedX, targetY, transform.position.z);
+            yield return new WaitForSeconds(ultimateHoldDuration);
+
+            FreezeLaserBeam(fixedX, targetY);
 
             if (shot < ultimateLaserCount - 1)
             {
@@ -239,7 +268,44 @@ public class AlienBoss : MonoBehaviour
             }
         }
 
+        yVelocity = 0f;
         isAttacking = false;
+    }
+
+    private IEnumerator PlayUltimateWarning()
+    {
+        if (angryWarningTransform == null || ultimateWarningDuration <= 0f)
+        {
+            SetAngryWarning(false);
+            isUltimateWarning = false;
+            yield break;
+        }
+
+        isUltimateWarning = true;
+        float elapsed = 0f;
+        float blinkInterval = Mathf.Max(0.01f, ultimateWarningBlinkInterval);
+        bool isVisible = false;
+
+        while (elapsed < ultimateWarningDuration)
+        {
+            isVisible = !isVisible;
+            SetAngryWarning(isVisible);
+
+            float waitTime = Mathf.Min(blinkInterval, ultimateWarningDuration - elapsed);
+            yield return new WaitForSeconds(waitTime);
+            elapsed += waitTime;
+        }
+
+        SetAngryWarning(false);
+        isUltimateWarning = false;
+    }
+
+    private void SetAngryWarning(bool visible)
+    {
+        if (angryWarningTransform != null)
+        {
+            angryWarningTransform.gameObject.SetActive(visible);
+        }
     }
 
     private void FreezeLaserBeam(float x, float y)
@@ -259,5 +325,8 @@ public class AlienBoss : MonoBehaviour
             obs.speed = 0f;
             obs.lifeTime = laserActiveDuration; // ค้างเลเซอร์ไว้ตามระยะเวลาที่ตั้งไว้
         }
+
+        NeonLaserFadeEffect fadeEffect = beam.AddComponent<NeonLaserFadeEffect>();
+        fadeEffect.fadeDuration = laserActiveDuration;
     }
 }

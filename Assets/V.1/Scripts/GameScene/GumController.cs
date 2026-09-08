@@ -129,7 +129,7 @@ public class GumController : MonoBehaviour
     public float shakeInterval = 0.15f;
 
     [Tooltip("ความแรงสั่นตอนหมากฝรั่งแตก (impulse เดียว ครั้งเดียว)")]
-    public float shakeForceOnPop = 0.6f;
+    public float shakeForceOnPop = 0.2f;
 
     [Header("Runtime (อ่านอย่างเดียว)")]
     public GumState currentState = GumState.Normal;
@@ -460,6 +460,8 @@ public class GumController : MonoBehaviour
         {
             gumRootSpriteRenderer.enabled = false;
         }
+
+        FirePopShake();
 
         // เรียก Coroutine ได้ตามปกติ ไม่ติด Error แล้ว
         StartCoroutine(RecoveryRoutine(duration));

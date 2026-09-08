@@ -15,6 +15,9 @@ public class CloudSpawnerInGame : MonoBehaviour
     [Tooltip("เริ่ม spawn เมฆหลังผู้เล่นขึ้นถึงความสูงเท่านี้ (เมตร)")]
     public float startAltitude = 400f;
 
+    [Tooltip("หยุด spawn เมฆเมื่อถึงความสูงนี้ โดย 100 world units = 1 km")]
+    public float stopSpawnAltitude = 2000f;
+
     [Header("Prefabs")]
     [Tooltip("เมฆหลายแบบ จะสุ่มเลือกทุกครั้งที่ spawn")]
     public GameObject[] cloudPrefabs;
@@ -74,6 +77,11 @@ public class CloudSpawnerInGame : MonoBehaviour
 
         float altitude = GetCurrentAltitude();
         if (altitude < startAltitude) return; // ยังไม่ถึงจุดเริ่ม spawn
+        if (altitude >= stopSpawnAltitude)
+        {
+            CleanupClouds();
+            return;
+        }
 
         nextSpawnTimer -= Time.deltaTime;
         if (nextSpawnTimer <= 0f)

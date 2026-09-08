@@ -14,7 +14,9 @@ public class DeadZonePlaceholder : MonoBehaviour
 
     private LineRenderer line;
     private float noInputTimer = 0f;
+    private float currentAlpha;
     public float hideDelay = 0.2f;
+    public float fadeDuration = 0.35f;
 
     void Awake()
     {
@@ -23,8 +25,8 @@ public class DeadZonePlaceholder : MonoBehaviour
         line.loop = true;
         line.positionCount = segments;
         line.widthMultiplier = lineWidth;
-        line.startColor = placeholderColor;
-        line.endColor = placeholderColor;
+        currentAlpha = placeholderColor.a;
+        ApplyAlpha();
 
         if (line.sharedMaterial == null)
         {
@@ -45,14 +47,21 @@ public class DeadZonePlaceholder : MonoBehaviour
         if (hasInput)
         {
             noInputTimer = 0f;
-            if (!line.enabled) line.enabled = true;
+            currentAlpha = placeholderColor.a;
+            line.enabled = true;
         }
         else
         {
             noInputTimer += Time.deltaTime;
-            if (noInputTimer >= hideDelay && line.enabled)
+            if (noInputTimer > hideDelay)
             {
-                line.enabled = false;
+                float fadeSpeed = fadeDuration > 0f ? placeholderColor.a / fadeDuration : placeholderColor.a;
+                currentAlpha = Mathf.MoveTowards(currentAlpha, 0f, fadeSpeed * Time.deltaTime);
+
+                if (currentAlpha <= 0f)
+                {
+                    line.enabled = false;
+                }
             }
         }
 
@@ -80,7 +89,14 @@ public class DeadZonePlaceholder : MonoBehaviour
         }
 
         line.widthMultiplier = lineWidth;
-        line.startColor = placeholderColor;
-        line.endColor = placeholderColor;
+        ApplyAlpha();
+    }
+
+    private void ApplyAlpha()
+    {
+        Color color = placeholderColor;
+        color.a = currentAlpha;
+        line.startColor = color;
+        line.endColor = color;
     }
 }
