@@ -99,6 +99,7 @@ public class PlayerController : MonoBehaviour
         {
             noiseComponent = vcam.GetComponent<CinemachineBasicMultiChannelPerlin>();
         }
+
     }
 
     void Start()
@@ -122,7 +123,6 @@ public class PlayerController : MonoBehaviour
 
         UpdateGumFromInput();
         HandleMaxFallShake();
-
         if (rb != null)
         {
             debugVelocityY = rb.linearVelocity.y; // Unity 6 / 2023.3+ ใช้ linearVelocity (หากใช้ Unity เวอร์ชันเก่ากว่าให้เปลี่ยนเป็น rb.velocity.y)
