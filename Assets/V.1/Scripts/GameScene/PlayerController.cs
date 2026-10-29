@@ -393,32 +393,33 @@ public class PlayerController : MonoBehaviour
     {
         isDamageShaking = true;
 
+        FlightRewardPresentation.HitFlash();
         if (blackFlashImage != null)
         {
-            blackFlashImage.gameObject.SetActive(true);
+            blackFlashImage.color = Color.clear;
+            blackFlashImage.gameObject.SetActive(false);
         }
-
         float timer = 0f;
-
-        while (timer < damageDuration)
+        float duration = Mathf.Max(0.01f, Mathf.Min(damageDuration, gum != null ? gum.dazedDuration : 0.45f, 0.45f));
+        while (timer < duration)
         {
             timer += Time.deltaTime;
 
             // คำนวณความรุนแรง (intensity) จาก 1 ไป 0 ตามเวลา 3 วินาที
-            float intensity = 1f - (timer / damageDuration);
+            float intensity = 1f - (timer / duration);
 
             // 1. ค่อยๆ ลดความดำของจอ
             if (blackFlashImage != null)
             {
                 Color flashColor = Color.black;
-                flashColor.a = intensity;
+                flashColor.a = 0f;
                 blackFlashImage.color = flashColor;
             }
 
             // 2. ค่อยๆ ลดความแรงของการสั่นกล้อง
             if (noiseComponent != null)
             {
-                noiseComponent.AmplitudeGain = damageShakeAmplitude * intensity;
+                noiseComponent.AmplitudeGain = Mathf.Min(1.2f, damageShakeAmplitude) * intensity;
             }
 
             yield return null; // รอทำงานต่อในเฟรมถัดไป

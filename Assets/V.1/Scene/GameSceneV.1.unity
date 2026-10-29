@@ -28582,7 +28582,7 @@ MonoBehaviour:
   popRecoveryTime: 2
   dazedDuration: 0.6
   normalStunDuration: 2.5
-  fastStunDuration: 1.5
+  fastStunDuration: 1
   panicEventStunDuration: 4
   gumVisual: {fileID: 702462035}
   gumRootSpriteRenderer: {fileID: 275357913}

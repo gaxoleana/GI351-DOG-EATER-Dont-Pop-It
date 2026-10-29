@@ -251,8 +251,24 @@ public class PanicEventManagerVariantNoStop : MonoBehaviour
         StartActiveEvent();
     }
 
+    private static void FitEventLabel(TextMeshProUGUI label, Image bar)
+    {
+        if (label == null || bar == null) return;
+        label.rectTransform.SetParent(bar.transform, false);
+        label.rectTransform.anchorMin = Vector2.zero; label.rectTransform.anchorMax = Vector2.one;
+        label.rectTransform.localScale = Vector3.one;
+        float padding = bar.rectTransform.rect.width * 0.04f;
+        label.rectTransform.offsetMin = new Vector2(padding, 0f); label.rectTransform.offsetMax = new Vector2(-padding, 0f);
+        label.alignment = TextAlignmentOptions.Center;
+        label.enableAutoSizing = true; label.fontSizeMin = Mathf.Max(1f, bar.rectTransform.rect.height * 0.35f); label.fontSizeMax = Mathf.Max(1f, bar.rectTransform.rect.height * 0.72f);
+        label.color = Color.white; label.outlineColor = new Color(0.06f, 0.08f, 0.14f); label.outlineWidth = 0.18f;
+        label.raycastTarget = false;
+    }
+
     void Start()
     {
+        FitEventLabel(redCountText, redProgressBar);
+        FitEventLabel(blueTimerText, blueProgressBar);
         if (player == null) player = FindAnyObjectByType<PlayerController>();
         if (gum == null) gum = FindAnyObjectByType<GumController>();
         if (panicVignetteController == null) panicVignetteController = FindAnyObjectByType<PanicVignetteController>();
@@ -534,6 +550,8 @@ public class PanicEventManagerVariantNoStop : MonoBehaviour
         if (currentBlueDuration - stateTimer < blueReleaseGrace) return;
         if (held) FailEvent();
     }
+
+    public void CancelForObstacleHit() { EndEvent(false); }
 
     private void FailEvent()
     {

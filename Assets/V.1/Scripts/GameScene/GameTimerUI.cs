@@ -28,10 +28,12 @@ public class GameTimerUI : MonoBehaviour
 
     private float timer = 0f;
     private bool isFinished = false;
+    private PauseMenuController pauseMenu;
 
     void Start()
     {
         if (player == null) player = FindAnyObjectByType<PlayerController>();
+        pauseMenu = FindAnyObjectByType<PauseMenuController>();
         if (winPanel != null) winPanel.SetActive(false);
 
         if (altitudeUI != null)
@@ -52,7 +54,7 @@ public class GameTimerUI : MonoBehaviour
     {
         if (!isFinished)
         {
-            timer += Time.deltaTime;
+            if (pauseMenu == null || !pauseMenu.IsPaused) timer += Time.unscaledDeltaTime;
 
             // 🔹 อัปเดตเวลาบนหน้าจอตอนเล่นเกมทุกๆ เฟรม
             if (inGameTimeText != null)
@@ -148,6 +150,7 @@ public class GameTimerUI : MonoBehaviour
         }
         player.transform.position = target;
         Time.timeScale = 0f;
+        HideGameplayHud();
         if (winPanel != null) winPanel.SetActive(true);
         if (totalTimeText != null)
         {
@@ -155,6 +158,16 @@ public class GameTimerUI : MonoBehaviour
             totalTimeText.text = $"Total time : {minutes:00}:{seconds:00}";
         }
         if (inGameTimeText != null) inGameTimeText.gameObject.SetActive(false);
+    }
+
+    private void HideGameplayHud()
+    {
+        var canvas = winPanel != null ? winPanel.GetComponentInParent<Canvas>() : null;
+        if (canvas == null) return;
+        foreach (var graphic in canvas.GetComponentsInChildren<UnityEngine.UI.Graphic>(true))
+            if (!graphic.transform.IsChildOf(winPanel.transform)) graphic.enabled = false;
+        foreach (var button in canvas.GetComponentsInChildren<UnityEngine.UI.Button>(true))
+            if (!button.transform.IsChildOf(winPanel.transform)) button.interactable = false;
     }
 
     /// <summary>เรียกเมื่อกดปุ่ม "เล่นต่อ"</summary>

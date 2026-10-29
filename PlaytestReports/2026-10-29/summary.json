@@ -1,0 +1,2118 @@
+{
+  "status": "finished",
+  "realSeconds": 713.144348,
+  "gameSeconds": 643.1094,
+  "y": 3031.7998,
+  "maxY": 3031.7998,
+  "pops": 51,
+  "dazes": 21,
+  "instant": 1,
+  "boosts": 0,
+  "spawned": {
+    "Bird": 73,
+    "plane": 27,
+    "LaserAttack": 27
+  },
+  "rocketsSeen": 11,
+  "poppedSeconds": 75.43746,
+  "dazedSeconds": 12.4701891,
+  "warningSeconds": 52.87485,
+  "redSeconds": 19.8017063,
+  "blueSeconds": 37.8149223,
+  "fallSeconds": 127.536293,
+  "events": [
+    {
+      "kind": "pop",
+      "t": 21.5806236,
+      "y": 148.0671,
+      "size": 0.3526804,
+      "eventState": "Idle"
+    },
+    {
+      "kind": "event",
+      "t": 27.8824043,
+      "y": 142.9547,
+      "from": "Idle",
+      "to": "Warning",
+      "type": "None",
+      "newType": "Red_Mash",
+      "mashes": 0,
+      "target": 0,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 29.0777626,
+      "y": 142.9547,
+      "from": "Warning",
+      "to": "Active",
+      "type": "Red_Mash",
+      "newType": "Red_Mash",
+      "mashes": 0,
+      "target": 0,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 29.68399,
+      "y": 144.414215,
+      "from": "Active",
+      "to": "Idle",
+      "type": "Red_Mash",
+      "newType": "None",
+      "mashes": 2,
+      "target": 3,
+      "gum": "Normal"
+    },
+    {
+      "kind": "pop",
+      "t": 36.68181,
+      "y": 193.384567,
+      "size": 0.323885,
+      "eventState": "Idle"
+    },
+    {
+      "kind": "event",
+      "t": 43.4384575,
+      "y": 189.149078,
+      "from": "Idle",
+      "to": "Warning",
+      "type": "None",
+      "newType": "Blue_HoldOff",
+      "mashes": 2,
+      "target": 3,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 44.6379967,
+      "y": 189.045273,
+      "from": "Warning",
+      "to": "Active",
+      "type": "Blue_HoldOff",
+      "newType": "Blue_HoldOff",
+      "mashes": 2,
+      "target": 3,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 46.6147041,
+      "y": 188.86734,
+      "from": "Active",
+      "to": "Idle",
+      "type": "Blue_HoldOff",
+      "newType": "None",
+      "mashes": 0,
+      "target": 3,
+      "gum": "Normal"
+    },
+    {
+      "kind": "pop",
+      "t": 47.2547874,
+      "y": 190.835281,
+      "size": 0.348267317,
+      "eventState": "Idle"
+    },
+    {
+      "kind": "event",
+      "t": 62.1123619,
+      "y": 251.748718,
+      "from": "Idle",
+      "to": "Warning",
+      "type": "None",
+      "newType": "Blue_HoldOff",
+      "mashes": 0,
+      "target": 3,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 63.3129921,
+      "y": 251.658676,
+      "from": "Warning",
+      "to": "Active",
+      "type": "Blue_HoldOff",
+      "newType": "Blue_HoldOff",
+      "mashes": 0,
+      "target": 3,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 64.75299,
+      "y": 251.529053,
+      "from": "Active",
+      "to": "Idle",
+      "type": "Blue_HoldOff",
+      "newType": "None",
+      "mashes": 0,
+      "target": 3,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 78.0618439,
+      "y": 348.109558,
+      "from": "Idle",
+      "to": "Warning",
+      "type": "None",
+      "newType": "Red_Mash",
+      "mashes": 0,
+      "target": 3,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 79.2621155,
+      "y": 348.109558,
+      "from": "Warning",
+      "to": "Active",
+      "type": "Red_Mash",
+      "newType": "Red_Mash",
+      "mashes": 0,
+      "target": 3,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 80.39244,
+      "y": 351.875519,
+      "from": "Active",
+      "to": "Idle",
+      "type": "Red_Mash",
+      "newType": "None",
+      "mashes": 5,
+      "target": 6,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 89.58237,
+      "y": 418.4773,
+      "from": "Idle",
+      "to": "Warning",
+      "type": "None",
+      "newType": "Blue_HoldOff",
+      "mashes": 5,
+      "target": 6,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 90.78128,
+      "y": 418.4084,
+      "from": "Warning",
+      "to": "Active",
+      "type": "Blue_HoldOff",
+      "newType": "Blue_HoldOff",
+      "mashes": 5,
+      "target": 6,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 92.5879059,
+      "y": 418.245728,
+      "from": "Active",
+      "to": "Idle",
+      "type": "Blue_HoldOff",
+      "newType": "None",
+      "mashes": 0,
+      "target": 6,
+      "gum": "Normal"
+    },
+    {
+      "kind": "body_hit",
+      "t": 96.52687,
+      "y": 442.270264
+    },
+    {
+      "kind": "pop",
+      "t": 102.48584,
+      "y": 470.844177,
+      "size": 0.38527602,
+      "eventState": "Idle"
+    },
+    {
+      "kind": "event",
+      "t": 105.207184,
+      "y": 447.670349,
+      "from": "Idle",
+      "to": "Warning",
+      "type": "None",
+      "newType": "Red_Mash",
+      "mashes": 0,
+      "target": 6,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 106.409363,
+      "y": 447.670349,
+      "from": "Warning",
+      "to": "Active",
+      "type": "Red_Mash",
+      "newType": "Red_Mash",
+      "mashes": 0,
+      "target": 6,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 107.318268,
+      "y": 449.840637,
+      "from": "Active",
+      "to": "Idle",
+      "type": "Red_Mash",
+      "newType": "None",
+      "mashes": 4,
+      "target": 5,
+      "gum": "Normal"
+    },
+    {
+      "kind": "pop",
+      "t": 111.466385,
+      "y": 478.831573,
+      "size": 0.3977537,
+      "eventState": "Idle"
+    },
+    {
+      "kind": "body_hit",
+      "t": 118.226013,
+      "y": 479.935181
+    },
+    {
+      "kind": "event",
+      "t": 121.037918,
+      "y": 491.509552,
+      "from": "Idle",
+      "to": "Warning",
+      "type": "None",
+      "newType": "Blue_HoldOff",
+      "mashes": 4,
+      "target": 5,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 122.238846,
+      "y": 491.44632,
+      "from": "Warning",
+      "to": "Active",
+      "type": "Blue_HoldOff",
+      "newType": "Blue_HoldOff",
+      "mashes": 4,
+      "target": 5,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 123.938095,
+      "y": 491.293365,
+      "from": "Active",
+      "to": "Idle",
+      "type": "Blue_HoldOff",
+      "newType": "None",
+      "mashes": 0,
+      "target": 5,
+      "gum": "Normal"
+    },
+    {
+      "kind": "pop",
+      "t": 127.117767,
+      "y": 510.619171,
+      "size": 0.44569236,
+      "eventState": "Idle"
+    },
+    {
+      "kind": "body_hit",
+      "t": 133.857529,
+      "y": 508.518555
+    },
+    {
+      "kind": "event",
+      "t": 139.481567,
+      "y": 534.6298,
+      "from": "Idle",
+      "to": "Warning",
+      "type": "None",
+      "newType": "Red_Mash",
+      "mashes": 0,
+      "target": 5,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 140.68251,
+      "y": 534.6298,
+      "from": "Warning",
+      "to": "Active",
+      "type": "Red_Mash",
+      "newType": "Red_Mash",
+      "mashes": 0,
+      "target": 5,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 141.93364,
+      "y": 539.691833,
+      "from": "Active",
+      "to": "Idle",
+      "type": "Red_Mash",
+      "newType": "None",
+      "mashes": 6,
+      "target": 7,
+      "gum": "Normal"
+    },
+    {
+      "kind": "pop",
+      "t": 147.3608,
+      "y": 581.2756,
+      "size": 0.7865433,
+      "eventState": "Idle"
+    },
+    {
+      "kind": "event",
+      "t": 153.7383,
+      "y": 582.6853,
+      "from": "Idle",
+      "to": "Warning",
+      "type": "None",
+      "newType": "Blue_HoldOff",
+      "mashes": 6,
+      "target": 7,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 154.939621,
+      "y": 582.581665,
+      "from": "Warning",
+      "to": "Active",
+      "type": "Blue_HoldOff",
+      "newType": "Blue_HoldOff",
+      "mashes": 6,
+      "target": 7,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 156.097778,
+      "y": 582.4791,
+      "from": "Active",
+      "to": "Idle",
+      "type": "Blue_HoldOff",
+      "newType": "None",
+      "mashes": 0,
+      "target": 7,
+      "gum": "Normal"
+    },
+    {
+      "kind": "pop",
+      "t": 161.53833,
+      "y": 625.3291,
+      "size": 0.6130641,
+      "eventState": "Idle"
+    },
+    {
+      "kind": "pop",
+      "t": 168.022476,
+      "y": 637.9478,
+      "size": 0.485924572,
+      "eventState": "Idle"
+    },
+    {
+      "kind": "event",
+      "t": 171.527924,
+      "y": 625.5462,
+      "from": "Idle",
+      "to": "Warning",
+      "type": "None",
+      "newType": "Blue_HoldOff",
+      "mashes": 0,
+      "target": 7,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 172.728622,
+      "y": 625.5268,
+      "from": "Warning",
+      "to": "Active",
+      "type": "Blue_HoldOff",
+      "newType": "Blue_HoldOff",
+      "mashes": 0,
+      "target": 7,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 173.924561,
+      "y": 625.420959,
+      "from": "Active",
+      "to": "Idle",
+      "type": "Blue_HoldOff",
+      "newType": "None",
+      "mashes": 0,
+      "target": 7,
+      "gum": "Normal"
+    },
+    {
+      "kind": "pop",
+      "t": 176.9825,
+      "y": 650.126038,
+      "size": 0.8647341,
+      "eventState": "Idle"
+    },
+    {
+      "kind": "body_hit",
+      "t": 183.501511,
+      "y": 665.925
+    },
+    {
+      "kind": "event",
+      "t": 186.263443,
+      "y": 683.1667,
+      "from": "Idle",
+      "to": "Warning",
+      "type": "None",
+      "newType": "Blue_HoldOff",
+      "mashes": 0,
+      "target": 7,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 187.465515,
+      "y": 683.2169,
+      "from": "Warning",
+      "to": "Active",
+      "type": "Blue_HoldOff",
+      "newType": "Blue_HoldOff",
+      "mashes": 0,
+      "target": 7,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 188.8574,
+      "y": 683.09375,
+      "from": "Active",
+      "to": "Idle",
+      "type": "Blue_HoldOff",
+      "newType": "None",
+      "mashes": 0,
+      "target": 7,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 197.878616,
+      "y": 760.8363,
+      "from": "Idle",
+      "to": "Warning",
+      "type": "None",
+      "newType": "Blue_HoldOff",
+      "mashes": 0,
+      "target": 7,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 199.079391,
+      "y": 760.9612,
+      "from": "Warning",
+      "to": "Active",
+      "type": "Blue_HoldOff",
+      "newType": "Blue_HoldOff",
+      "mashes": 0,
+      "target": 7,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 200.526077,
+      "y": 760.8331,
+      "from": "Active",
+      "to": "Idle",
+      "type": "Blue_HoldOff",
+      "newType": "None",
+      "mashes": 0,
+      "target": 7,
+      "gum": "Normal"
+    },
+    {
+      "kind": "pop",
+      "t": 204.082016,
+      "y": 790.172546,
+      "size": 0.8650088,
+      "eventState": "Idle"
+    },
+    {
+      "kind": "pop",
+      "t": 210.403763,
+      "y": 807.7638,
+      "size": 0.777432263,
+      "eventState": "Idle"
+    },
+    {
+      "kind": "pop",
+      "t": 216.502365,
+      "y": 822.251343,
+      "size": 0.676770031,
+      "eventState": "Idle"
+    },
+    {
+      "kind": "event",
+      "t": 218.125839,
+      "y": 815.425659,
+      "from": "Idle",
+      "to": "Warning",
+      "type": "None",
+      "newType": "Blue_HoldOff",
+      "mashes": 0,
+      "target": 7,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 219.331131,
+      "y": 815.089966,
+      "from": "Warning",
+      "to": "Active",
+      "type": "Blue_HoldOff",
+      "newType": "Blue_HoldOff",
+      "mashes": 0,
+      "target": 7,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 220.773148,
+      "y": 814.9623,
+      "from": "Active",
+      "to": "Idle",
+      "type": "Blue_HoldOff",
+      "newType": "None",
+      "mashes": 0,
+      "target": 7,
+      "gum": "Normal"
+    },
+    {
+      "kind": "pop",
+      "t": 229.995117,
+      "y": 891.806152,
+      "size": 0.5062135,
+      "eventState": "Idle"
+    },
+    {
+      "kind": "event",
+      "t": 233.614883,
+      "y": 880.79,
+      "from": "Idle",
+      "to": "Warning",
+      "type": "None",
+      "newType": "Blue_HoldOff",
+      "mashes": 0,
+      "target": 7,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 234.8177,
+      "y": 880.8373,
+      "from": "Warning",
+      "to": "Active",
+      "type": "Blue_HoldOff",
+      "newType": "Blue_HoldOff",
+      "mashes": 0,
+      "target": 7,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 236.032608,
+      "y": 880.729736,
+      "from": "Active",
+      "to": "Idle",
+      "type": "Blue_HoldOff",
+      "newType": "None",
+      "mashes": 0,
+      "target": 7,
+      "gum": "Normal"
+    },
+    {
+      "kind": "pop",
+      "t": 238.41362,
+      "y": 894.751831,
+      "size": 0.285718024,
+      "eventState": "Idle"
+    },
+    {
+      "kind": "pop",
+      "t": 244.51329,
+      "y": 895.134766,
+      "size": 0.446745634,
+      "eventState": "Idle"
+    },
+    {
+      "kind": "event",
+      "t": 247.580673,
+      "y": 875.5463,
+      "from": "Idle",
+      "to": "Warning",
+      "type": "None",
+      "newType": "Red_Mash",
+      "mashes": 0,
+      "target": 7,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 248.780563,
+      "y": 875.5463,
+      "from": "Warning",
+      "to": "Active",
+      "type": "Red_Mash",
+      "newType": "Red_Mash",
+      "mashes": 0,
+      "target": 7,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 250.204666,
+      "y": 880.674438,
+      "from": "Active",
+      "to": "Idle",
+      "type": "Red_Mash",
+      "newType": "None",
+      "mashes": 7,
+      "target": 8,
+      "gum": "Normal"
+    },
+    {
+      "kind": "pop",
+      "t": 253.272629,
+      "y": 907.130859,
+      "size": 0.652647,
+      "eventState": "Idle"
+    },
+    {
+      "kind": "pop",
+      "t": 259.23172,
+      "y": 918.4332,
+      "size": 0.5877155,
+      "eventState": "Idle"
+    },
+    {
+      "kind": "event",
+      "t": 262.0898,
+      "y": 902.302063,
+      "from": "Idle",
+      "to": "Warning",
+      "type": "None",
+      "newType": "Blue_HoldOff",
+      "mashes": 7,
+      "target": 8,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 263.290344,
+      "y": 902.1997,
+      "from": "Warning",
+      "to": "Active",
+      "type": "Blue_HoldOff",
+      "newType": "Blue_HoldOff",
+      "mashes": 7,
+      "target": 8,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 264.942169,
+      "y": 902.0535,
+      "from": "Active",
+      "to": "Idle",
+      "type": "Blue_HoldOff",
+      "newType": "None",
+      "mashes": 0,
+      "target": 8,
+      "gum": "Normal"
+    },
+    {
+      "kind": "pop",
+      "t": 268.019073,
+      "y": 925.0891,
+      "size": 0.5879852,
+      "eventState": "Idle"
+    },
+    {
+      "kind": "pop",
+      "t": 278.519836,
+      "y": 971.542542,
+      "size": 0.601272,
+      "eventState": "Idle"
+    },
+    {
+      "kind": "event",
+      "t": 280.1199,
+      "y": 963.0789,
+      "from": "Idle",
+      "to": "Warning",
+      "type": "None",
+      "newType": "Red_Mash",
+      "mashes": 0,
+      "target": 8,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 281.322723,
+      "y": 963.0789,
+      "from": "Warning",
+      "to": "Active",
+      "type": "Red_Mash",
+      "newType": "Red_Mash",
+      "mashes": 0,
+      "target": 8,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 281.886627,
+      "y": 960.526855,
+      "from": "Active",
+      "to": "Idle",
+      "type": "Red_Mash",
+      "newType": "None",
+      "mashes": 2,
+      "target": 3,
+      "gum": "Normal"
+    },
+    {
+      "kind": "pop",
+      "t": 286.241547,
+      "y": 999.5259,
+      "size": 0.6496144,
+      "eventState": "Idle"
+    },
+    {
+      "kind": "event",
+      "t": 292.97467,
+      "y": 1014.42944,
+      "from": "Idle",
+      "to": "Warning",
+      "type": "None",
+      "newType": "Red_Mash",
+      "mashes": 2,
+      "target": 3,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 294.1785,
+      "y": 1014.42944,
+      "from": "Warning",
+      "to": "Active",
+      "type": "Red_Mash",
+      "newType": "Red_Mash",
+      "mashes": 2,
+      "target": 3,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 294.7435,
+      "y": 1019.0575,
+      "from": "Active",
+      "to": "Idle",
+      "type": "Red_Mash",
+      "newType": "None",
+      "mashes": 2,
+      "target": 3,
+      "gum": "Normal"
+    },
+    {
+      "kind": "body_hit",
+      "t": 298.225647,
+      "y": 1047.10071
+    },
+    {
+      "kind": "pop",
+      "t": 303.0461,
+      "y": 1072.13977,
+      "size": 0.4537447,
+      "eventState": "Idle"
+    },
+    {
+      "kind": "event",
+      "t": 307.0916,
+      "y": 1062.417,
+      "from": "Idle",
+      "to": "Warning",
+      "type": "None",
+      "newType": "Blue_HoldOff",
+      "mashes": 2,
+      "target": 3,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 308.292053,
+      "y": 1062.32935,
+      "from": "Warning",
+      "to": "Active",
+      "type": "Blue_HoldOff",
+      "newType": "Blue_HoldOff",
+      "mashes": 2,
+      "target": 3,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 309.503021,
+      "y": 1062.21851,
+      "from": "Active",
+      "to": "Idle",
+      "type": "Blue_HoldOff",
+      "newType": "None",
+      "mashes": 0,
+      "target": 3,
+      "gum": "Normal"
+    },
+    {
+      "kind": "pop",
+      "t": 311.140167,
+      "y": 1068.748,
+      "size": 0.298298746,
+      "eventState": "Idle"
+    },
+    {
+      "kind": "event",
+      "t": 320.8344,
+      "y": 1095.372,
+      "from": "Idle",
+      "to": "Warning",
+      "type": "None",
+      "newType": "Red_Mash",
+      "mashes": 0,
+      "target": 3,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 322.039948,
+      "y": 1095.372,
+      "from": "Warning",
+      "to": "Active",
+      "type": "Red_Mash",
+      "newType": "Red_Mash",
+      "mashes": 0,
+      "target": 3,
+      "gum": "Normal"
+    },
+    {
+      "kind": "instant_event_hit",
+      "t": 322.371948,
+      "y": 1096.49829
+    },
+    {
+      "kind": "event",
+      "t": 322.372467,
+      "y": 1096.44531,
+      "from": "Active",
+      "to": "Idle",
+      "type": "Red_Mash",
+      "newType": "None",
+      "mashes": 1,
+      "target": 12,
+      "gum": "Normal"
+    },
+    {
+      "kind": "body_hit",
+      "t": 326.804047,
+      "y": 1133.91833
+    },
+    {
+      "kind": "pop",
+      "t": 331.604279,
+      "y": 1161.95154,
+      "size": 0.46177882,
+      "eventState": "Idle"
+    },
+    {
+      "kind": "pop",
+      "t": 337.146942,
+      "y": 1157.61267,
+      "size": 0.454467922,
+      "eventState": "Idle"
+    },
+    {
+      "kind": "event",
+      "t": 339.202,
+      "y": 1138.86682,
+      "from": "Idle",
+      "to": "Warning",
+      "type": "None",
+      "newType": "Red_Mash",
+      "mashes": 1,
+      "target": 12,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 340.408356,
+      "y": 1138.86682,
+      "from": "Warning",
+      "to": "Active",
+      "type": "Red_Mash",
+      "newType": "Red_Mash",
+      "mashes": 1,
+      "target": 12,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 342.1704,
+      "y": 1141.19849,
+      "from": "Active",
+      "to": "Idle",
+      "type": "Red_Mash",
+      "newType": "None",
+      "mashes": 9,
+      "target": 10,
+      "gum": "Normal"
+    },
+    {
+      "kind": "body_hit",
+      "t": 345.771332,
+      "y": 1170.38037
+    },
+    {
+      "kind": "pop",
+      "t": 350.392151,
+      "y": 1199.1958,
+      "size": 0.5535057,
+      "eventState": "Idle"
+    },
+    {
+      "kind": "event",
+      "t": 352.3021,
+      "y": 1184.63074,
+      "from": "Idle",
+      "to": "Warning",
+      "type": "None",
+      "newType": "Blue_HoldOff",
+      "mashes": 9,
+      "target": 10,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 353.50943,
+      "y": 1184.43188,
+      "from": "Warning",
+      "to": "Active",
+      "type": "Blue_HoldOff",
+      "newType": "Blue_HoldOff",
+      "mashes": 9,
+      "target": 10,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 355.043457,
+      "y": 1184.2915,
+      "from": "Active",
+      "to": "Idle",
+      "type": "Blue_HoldOff",
+      "newType": "None",
+      "mashes": 0,
+      "target": 10,
+      "gum": "Normal"
+    },
+    {
+      "kind": "pop",
+      "t": 362.503662,
+      "y": 1255.128,
+      "size": 0.2740093,
+      "eventState": "Idle"
+    },
+    {
+      "kind": "event",
+      "t": 367.059723,
+      "y": 1248.39978,
+      "from": "Idle",
+      "to": "Warning",
+      "type": "None",
+      "newType": "Red_Mash",
+      "mashes": 0,
+      "target": 10,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 368.262329,
+      "y": 1248.39978,
+      "from": "Warning",
+      "to": "Active",
+      "type": "Red_Mash",
+      "newType": "Red_Mash",
+      "mashes": 0,
+      "target": 10,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 369.6827,
+      "y": 1252.95374,
+      "from": "Active",
+      "to": "Idle",
+      "type": "Red_Mash",
+      "newType": "None",
+      "mashes": 7,
+      "target": 8,
+      "gum": "Normal"
+    },
+    {
+      "kind": "body_hit",
+      "t": 378.2905,
+      "y": 1339.68164
+    },
+    {
+      "kind": "pop",
+      "t": 382.526062,
+      "y": 1362.90027,
+      "size": 0.5458659,
+      "eventState": "Idle"
+    },
+    {
+      "kind": "event",
+      "t": 386.396759,
+      "y": 1357.73389,
+      "from": "Idle",
+      "to": "Warning",
+      "type": "None",
+      "newType": "Blue_HoldOff",
+      "mashes": 7,
+      "target": 8,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 387.594025,
+      "y": 1357.72839,
+      "from": "Warning",
+      "to": "Active",
+      "type": "Blue_HoldOff",
+      "newType": "Blue_HoldOff",
+      "mashes": 7,
+      "target": 8,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 389.018951,
+      "y": 1357.598,
+      "from": "Active",
+      "to": "Idle",
+      "type": "Blue_HoldOff",
+      "newType": "None",
+      "mashes": 0,
+      "target": 8,
+      "gum": "Normal"
+    },
+    {
+      "kind": "pop",
+      "t": 394.040466,
+      "y": 1400.18433,
+      "size": 0.473833054,
+      "eventState": "Idle"
+    },
+    {
+      "kind": "body_hit",
+      "t": 399.222046,
+      "y": 1403.469
+    },
+    {
+      "kind": "event",
+      "t": 402.611481,
+      "y": 1426.87256,
+      "from": "Idle",
+      "to": "Warning",
+      "type": "None",
+      "newType": "Blue_HoldOff",
+      "mashes": 0,
+      "target": 8,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 403.812775,
+      "y": 1426.79724,
+      "from": "Warning",
+      "to": "Active",
+      "type": "Blue_HoldOff",
+      "newType": "Blue_HoldOff",
+      "mashes": 0,
+      "target": 8,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 404.835754,
+      "y": 1426.70361,
+      "from": "Active",
+      "to": "Idle",
+      "type": "Blue_HoldOff",
+      "newType": "None",
+      "mashes": 0,
+      "target": 8,
+      "gum": "Normal"
+    },
+    {
+      "kind": "pop",
+      "t": 413.93512,
+      "y": 1447.123,
+      "size": 0.7597394,
+      "eventState": "Idle"
+    },
+    {
+      "kind": "event",
+      "t": 419.540619,
+      "y": 1452.86621,
+      "from": "Idle",
+      "to": "Warning",
+      "type": "None",
+      "newType": "Red_Mash",
+      "mashes": 0,
+      "target": 8,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 420.740234,
+      "y": 1452.86621,
+      "from": "Warning",
+      "to": "Active",
+      "type": "Red_Mash",
+      "newType": "Red_Mash",
+      "mashes": 0,
+      "target": 8,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 422.501648,
+      "y": 1458.71948,
+      "from": "Active",
+      "to": "Idle",
+      "type": "Red_Mash",
+      "newType": "None",
+      "mashes": 9,
+      "target": 10,
+      "gum": "Normal"
+    },
+    {
+      "kind": "body_hit",
+      "t": 424.336,
+      "y": 1472.17529
+    },
+    {
+      "kind": "body_hit",
+      "t": 428.43692,
+      "y": 1496.65381
+    },
+    {
+      "kind": "pop",
+      "t": 432.476318,
+      "y": 1524.21411,
+      "size": 0.457171172,
+      "eventState": "Idle"
+    },
+    {
+      "kind": "event",
+      "t": 433.9782,
+      "y": 1512.678,
+      "from": "Idle",
+      "to": "Warning",
+      "type": "None",
+      "newType": "Blue_HoldOff",
+      "mashes": 9,
+      "target": 10,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 435.1806,
+      "y": 1512.3291,
+      "from": "Warning",
+      "to": "Active",
+      "type": "Blue_HoldOff",
+      "newType": "Blue_HoldOff",
+      "mashes": 9,
+      "target": 10,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 436.533478,
+      "y": 1512.20532,
+      "from": "Active",
+      "to": "Idle",
+      "type": "Blue_HoldOff",
+      "newType": "None",
+      "mashes": 0,
+      "target": 10,
+      "gum": "Normal"
+    },
+    {
+      "kind": "pop",
+      "t": 439.9129,
+      "y": 1543.362,
+      "size": 0.6840926,
+      "eventState": "Idle"
+    },
+    {
+      "kind": "pop",
+      "t": 444.711548,
+      "y": 1551.02466,
+      "size": 0.6772089,
+      "eventState": "Idle"
+    },
+    {
+      "kind": "pop",
+      "t": 449.571472,
+      "y": 1553.78455,
+      "size": 0.4319564,
+      "eventState": "Idle"
+    },
+    {
+      "kind": "event",
+      "t": 454.043671,
+      "y": 1548.97388,
+      "from": "Idle",
+      "to": "Warning",
+      "type": "None",
+      "newType": "Blue_HoldOff",
+      "mashes": 0,
+      "target": 10,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 455.244,
+      "y": 1548.92285,
+      "from": "Warning",
+      "to": "Active",
+      "type": "Blue_HoldOff",
+      "newType": "Blue_HoldOff",
+      "mashes": 0,
+      "target": 10,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 456.485046,
+      "y": 1548.8092,
+      "from": "Active",
+      "to": "Idle",
+      "type": "Blue_HoldOff",
+      "newType": "None",
+      "mashes": 0,
+      "target": 10,
+      "gum": "Normal"
+    },
+    {
+      "kind": "pop",
+      "t": 460.1851,
+      "y": 1579.80151,
+      "size": 0.413725674,
+      "eventState": "Idle"
+    },
+    {
+      "kind": "event",
+      "t": 470.3656,
+      "y": 1640.22,
+      "from": "Idle",
+      "to": "Warning",
+      "type": "None",
+      "newType": "Red_Mash",
+      "mashes": 0,
+      "target": 10,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 471.569336,
+      "y": 1640.22,
+      "from": "Warning",
+      "to": "Active",
+      "type": "Red_Mash",
+      "newType": "Red_Mash",
+      "mashes": 0,
+      "target": 10,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 473.16507,
+      "y": 1653.97534,
+      "from": "Active",
+      "to": "Idle",
+      "type": "Red_Mash",
+      "newType": "None",
+      "mashes": 8,
+      "target": 9,
+      "gum": "Normal"
+    },
+    {
+      "kind": "pop",
+      "t": 474.2881,
+      "y": 1665.38977,
+      "size": 0.5537521,
+      "eventState": "Idle"
+    },
+    {
+      "kind": "pop",
+      "t": 478.949249,
+      "y": 1668.79626,
+      "size": 0.5988179,
+      "eventState": "Idle"
+    },
+    {
+      "kind": "event",
+      "t": 486.6948,
+      "y": 1704.34131,
+      "from": "Idle",
+      "to": "Warning",
+      "type": "None",
+      "newType": "Blue_HoldOff",
+      "mashes": 8,
+      "target": 9,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 487.863617,
+      "y": 1704.36682,
+      "from": "Warning",
+      "to": "Active",
+      "type": "Blue_HoldOff",
+      "newType": "Blue_HoldOff",
+      "mashes": 8,
+      "target": 9,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 489.810883,
+      "y": 1704.18848,
+      "from": "Active",
+      "to": "Idle",
+      "type": "Blue_HoldOff",
+      "newType": "None",
+      "mashes": 0,
+      "target": 9,
+      "gum": "Normal"
+    },
+    {
+      "kind": "body_hit",
+      "t": 492.888275,
+      "y": 1732.917
+    },
+    {
+      "kind": "pop",
+      "t": 494.149445,
+      "y": 1736.36121,
+      "size": 0.1297244,
+      "eventState": "Idle"
+    },
+    {
+      "kind": "pop",
+      "t": 498.109467,
+      "y": 1720.66528,
+      "size": 0.49048847,
+      "eventState": "Idle"
+    },
+    {
+      "kind": "pop",
+      "t": 505.628876,
+      "y": 1749.0293,
+      "size": 0.5388753,
+      "eventState": "Idle"
+    },
+    {
+      "kind": "event",
+      "t": 508.9814,
+      "y": 1736.52271,
+      "from": "Idle",
+      "to": "Warning",
+      "type": "None",
+      "newType": "Blue_HoldOff",
+      "mashes": 0,
+      "target": 9,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 510.184418,
+      "y": 1736.477,
+      "from": "Warning",
+      "to": "Active",
+      "type": "Blue_HoldOff",
+      "newType": "Blue_HoldOff",
+      "mashes": 0,
+      "target": 9,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 511.9564,
+      "y": 1736.31482,
+      "from": "Active",
+      "to": "Idle",
+      "type": "Blue_HoldOff",
+      "newType": "None",
+      "mashes": 0,
+      "target": 9,
+      "gum": "Normal"
+    },
+    {
+      "kind": "pop",
+      "t": 513.27594,
+      "y": 1744.636,
+      "size": 0.5641019,
+      "eventState": "Idle"
+    },
+    {
+      "kind": "pop",
+      "t": 520.5586,
+      "y": 1772.96887,
+      "size": 0.401998967,
+      "eventState": "Idle"
+    },
+    {
+      "kind": "body_hit",
+      "t": 525.0774,
+      "y": 1764.47827
+    },
+    {
+      "kind": "pop",
+      "t": 528.636536,
+      "y": 1790.51514,
+      "size": 0.4012035,
+      "eventState": "Idle"
+    },
+    {
+      "kind": "event",
+      "t": 531.5319,
+      "y": 1770.15112,
+      "from": "Idle",
+      "to": "Warning",
+      "type": "None",
+      "newType": "Red_Mash",
+      "mashes": 0,
+      "target": 9,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 532.7335,
+      "y": 1770.15112,
+      "from": "Warning",
+      "to": "Active",
+      "type": "Red_Mash",
+      "newType": "Red_Mash",
+      "mashes": 0,
+      "target": 9,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 533.480042,
+      "y": 1772.40283,
+      "from": "Active",
+      "to": "Idle",
+      "type": "Red_Mash",
+      "newType": "None",
+      "mashes": 3,
+      "target": 4,
+      "gum": "Normal"
+    },
+    {
+      "kind": "body_hit",
+      "t": 535.0021,
+      "y": 1784.6925
+    },
+    {
+      "kind": "pop",
+      "t": 538.3988,
+      "y": 1810.29761,
+      "size": 0.4693246,
+      "eventState": "Idle"
+    },
+    {
+      "kind": "pop",
+      "t": 542.7986,
+      "y": 1806.48071,
+      "size": 0.399488539,
+      "eventState": "Idle"
+    },
+    {
+      "kind": "event",
+      "t": 546.517639,
+      "y": 1794.06592,
+      "from": "Idle",
+      "to": "Warning",
+      "type": "None",
+      "newType": "Blue_HoldOff",
+      "mashes": 3,
+      "target": 4,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 547.72,
+      "y": 1794.17249,
+      "from": "Warning",
+      "to": "Active",
+      "type": "Blue_HoldOff",
+      "newType": "Blue_HoldOff",
+      "mashes": 3,
+      "target": 4,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 549.005737,
+      "y": 1794.05481,
+      "from": "Active",
+      "to": "Idle",
+      "type": "Blue_HoldOff",
+      "newType": "None",
+      "mashes": 0,
+      "target": 4,
+      "gum": "Normal"
+    },
+    {
+      "kind": "pop",
+      "t": 555.385437,
+      "y": 1826.31262,
+      "size": 0.764091551,
+      "eventState": "Idle"
+    },
+    {
+      "kind": "pop",
+      "t": 559.824768,
+      "y": 1827.50269,
+      "size": 0.577730238,
+      "eventState": "Idle"
+    },
+    {
+      "kind": "event",
+      "t": 563.587769,
+      "y": 1823.351,
+      "from": "Idle",
+      "to": "Warning",
+      "type": "None",
+      "newType": "Blue_HoldOff",
+      "mashes": 0,
+      "target": 4,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 564.7885,
+      "y": 1823.34033,
+      "from": "Warning",
+      "to": "Active",
+      "type": "Blue_HoldOff",
+      "newType": "Blue_HoldOff",
+      "mashes": 0,
+      "target": 4,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 566.565247,
+      "y": 1823.17773,
+      "from": "Active",
+      "to": "Idle",
+      "type": "Blue_HoldOff",
+      "newType": "None",
+      "mashes": 0,
+      "target": 4,
+      "gum": "Normal"
+    },
+    {
+      "kind": "body_hit",
+      "t": 570.0061,
+      "y": 1856.79077
+    },
+    {
+      "kind": "event",
+      "t": 579.5222,
+      "y": 1962.348,
+      "from": "Idle",
+      "to": "Warning",
+      "type": "None",
+      "newType": "Blue_HoldOff",
+      "mashes": 0,
+      "target": 4,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 580.7234,
+      "y": 1962.324,
+      "from": "Warning",
+      "to": "Active",
+      "type": "Blue_HoldOff",
+      "newType": "Blue_HoldOff",
+      "mashes": 0,
+      "target": 4,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 581.934265,
+      "y": 1962.213,
+      "from": "Active",
+      "to": "Idle",
+      "type": "Blue_HoldOff",
+      "newType": "None",
+      "mashes": 0,
+      "target": 4,
+      "gum": "Normal"
+    },
+    {
+      "kind": "body_hit",
+      "t": 586.371948,
+      "y": 1984.04321
+    },
+    {
+      "kind": "body_hit",
+      "t": 589.5132,
+      "y": 2002.0752
+    },
+    {
+      "kind": "event",
+      "t": 597.084839,
+      "y": 2076.51025,
+      "from": "Idle",
+      "to": "Warning",
+      "type": "None",
+      "newType": "Blue_HoldOff",
+      "mashes": 0,
+      "target": 4,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 598.2858,
+      "y": 2076.42822,
+      "from": "Warning",
+      "to": "Active",
+      "type": "Blue_HoldOff",
+      "newType": "Blue_HoldOff",
+      "mashes": 0,
+      "target": 4,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 599.3752,
+      "y": 2076.33521,
+      "from": "Active",
+      "to": "Idle",
+      "type": "Blue_HoldOff",
+      "newType": "None",
+      "mashes": 0,
+      "target": 4,
+      "gum": "Normal"
+    },
+    {
+      "kind": "body_hit",
+      "t": 604.255066,
+      "y": 2134.12329
+    },
+    {
+      "kind": "event",
+      "t": 608.5526,
+      "y": 2166.70215,
+      "from": "Idle",
+      "to": "Warning",
+      "type": "None",
+      "newType": "Red_Mash",
+      "mashes": 0,
+      "target": 4,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 609.7538,
+      "y": 2166.70215,
+      "from": "Warning",
+      "to": "Active",
+      "type": "Red_Mash",
+      "newType": "Red_Mash",
+      "mashes": 0,
+      "target": 4,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 610.3185,
+      "y": 2167.97656,
+      "from": "Active",
+      "to": "Idle",
+      "type": "Red_Mash",
+      "newType": "None",
+      "mashes": 2,
+      "target": 3,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 620.880859,
+      "y": 2279.33057,
+      "from": "Idle",
+      "to": "Warning",
+      "type": "None",
+      "newType": "Red_Mash",
+      "mashes": 2,
+      "target": 3,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 622.0839,
+      "y": 2279.33057,
+      "from": "Warning",
+      "to": "Active",
+      "type": "Red_Mash",
+      "newType": "Red_Mash",
+      "mashes": 2,
+      "target": 3,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 622.8197,
+      "y": 2280.983,
+      "from": "Active",
+      "to": "Idle",
+      "type": "Red_Mash",
+      "newType": "None",
+      "mashes": 3,
+      "target": 4,
+      "gum": "Normal"
+    },
+    {
+      "kind": "pop",
+      "t": 628.5796,
+      "y": 2348.35938,
+      "size": 0.4391904,
+      "eventState": "Idle"
+    },
+    {
+      "kind": "body_hit",
+      "t": 629.299561,
+      "y": 2348.02271
+    },
+    {
+      "kind": "event",
+      "t": 635.564758,
+      "y": 2380.73218,
+      "from": "Idle",
+      "to": "Warning",
+      "type": "None",
+      "newType": "Blue_HoldOff",
+      "mashes": 3,
+      "target": 4,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 636.764954,
+      "y": 2380.73657,
+      "from": "Warning",
+      "to": "Active",
+      "type": "Blue_HoldOff",
+      "newType": "Blue_HoldOff",
+      "mashes": 3,
+      "target": 4,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 638.1421,
+      "y": 2380.61914,
+      "from": "Active",
+      "to": "Idle",
+      "type": "Blue_HoldOff",
+      "newType": "None",
+      "mashes": 0,
+      "target": 4,
+      "gum": "Normal"
+    },
+    {
+      "kind": "body_hit",
+      "t": 642.658752,
+      "y": 2436.86133
+    },
+    {
+      "kind": "event",
+      "t": 646.8603,
+      "y": 2484.29028,
+      "from": "Idle",
+      "to": "Warning",
+      "type": "None",
+      "newType": "Red_Mash",
+      "mashes": 0,
+      "target": 4,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 648.0636,
+      "y": 2484.29028,
+      "from": "Warning",
+      "to": "Active",
+      "type": "Red_Mash",
+      "newType": "Red_Mash",
+      "mashes": 0,
+      "target": 4,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 649.480652,
+      "y": 2498.7417,
+      "from": "Active",
+      "to": "Idle",
+      "type": "Red_Mash",
+      "newType": "None",
+      "mashes": 7,
+      "target": 8,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 658.88324,
+      "y": 2631.16284,
+      "from": "Idle",
+      "to": "Warning",
+      "type": "None",
+      "newType": "Blue_HoldOff",
+      "mashes": 7,
+      "target": 8,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 660.0837,
+      "y": 2631.39551,
+      "from": "Warning",
+      "to": "Active",
+      "type": "Blue_HoldOff",
+      "newType": "Blue_HoldOff",
+      "mashes": 7,
+      "target": 8,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 661.998657,
+      "y": 2631.232,
+      "from": "Active",
+      "to": "Idle",
+      "type": "Blue_HoldOff",
+      "newType": "None",
+      "mashes": 0,
+      "target": 8,
+      "gum": "Normal"
+    },
+    {
+      "kind": "pop",
+      "t": 662.0174,
+      "y": 2631.23047,
+      "size": 0.2597272,
+      "eventState": "Idle"
+    },
+    {
+      "kind": "pop",
+      "t": 668.2778,
+      "y": 2641.24146,
+      "size": 0.192505345,
+      "eventState": "Idle"
+    },
+    {
+      "kind": "event",
+      "t": 675.247253,
+      "y": 2654.17,
+      "from": "Idle",
+      "to": "Warning",
+      "type": "None",
+      "newType": "Red_Mash",
+      "mashes": 0,
+      "target": 8,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 676.4513,
+      "y": 2654.17,
+      "from": "Warning",
+      "to": "Active",
+      "type": "Red_Mash",
+      "newType": "Red_Mash",
+      "mashes": 0,
+      "target": 8,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 678.214355,
+      "y": 2662.08838,
+      "from": "Active",
+      "to": "Idle",
+      "type": "Red_Mash",
+      "newType": "None",
+      "mashes": 9,
+      "target": 10,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 691.835144,
+      "y": 2852.57,
+      "from": "Idle",
+      "to": "Warning",
+      "type": "None",
+      "newType": "Blue_HoldOff",
+      "mashes": 9,
+      "target": 10,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 693.035034,
+      "y": 2852.5083,
+      "from": "Warning",
+      "to": "Active",
+      "type": "Blue_HoldOff",
+      "newType": "Blue_HoldOff",
+      "mashes": 9,
+      "target": 10,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 694.264465,
+      "y": 2852.40332,
+      "from": "Active",
+      "to": "Idle",
+      "type": "Blue_HoldOff",
+      "newType": "None",
+      "mashes": 0,
+      "target": 10,
+      "gum": "Normal"
+    },
+    {
+      "kind": "pop",
+      "t": 697.360657,
+      "y": 2891.69043,
+      "size": 0.615525842,
+      "eventState": "Idle"
+    },
+    {
+      "kind": "body_hit",
+      "t": 698.360962,
+      "y": 2893.4895
+    },
+    {
+      "kind": "event",
+      "t": 707.878967,
+      "y": 2985.34644,
+      "from": "Idle",
+      "to": "Warning",
+      "type": "None",
+      "newType": "Red_Mash",
+      "mashes": 0,
+      "target": 10,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 709.079956,
+      "y": 2985.34644,
+      "from": "Warning",
+      "to": "Active",
+      "type": "Red_Mash",
+      "newType": "Red_Mash",
+      "mashes": 0,
+      "target": 10,
+      "gum": "Normal"
+    },
+    {
+      "kind": "event",
+      "t": 710.3681,
+      "y": 3000.0,
+      "from": "Active",
+      "to": "Idle",
+      "type": "Red_Mash",
+      "newType": "None",
+      "mashes": 7,
+      "target": 10,
+      "gum": "Normal"
+    }
+  ],
+  "stages": [
+    {
+      "height": 100.0,
+      "t": 14.4185791,
+      "gameTime": 14.3407831
+    },
+    {
+      "height": 600.0,
+      "t": 158.643326,
+      "gameTime": 143.902832
+    },
+    {
+      "height": 1000.0,
+      "t": 286.292053,
+      "gameTime": 258.260071
+    },
+    {
+      "height": 1200.0,
+      "t": 350.509033,
+      "gameTime": 317.173431
+    },
+    {
+      "height": 1800.0,
+      "t": 537.4955,
+      "gameTime": 486.276276
+    },
+    {
+      "height": 2000.0,
+      "t": 589.3329,
+      "gameTime": 532.559143
+    },
+    {
+      "height": 2400.0,
+      "t": 640.0566,
+      "gameTime": 577.5116
+    },
+    {
+      "height": 3000.0,
+      "t": 710.3681,
+      "gameTime": 640.3259
+    }
+  ]
+}

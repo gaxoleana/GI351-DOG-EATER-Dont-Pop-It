@@ -329,6 +329,8 @@ public class PanicEventManagerVariantTimeStop : MonoBehaviour
         }
     }
 
+    public void CancelForObstacleHit() { EndEvent(false); }
+
     private void FailEvent()
     {
         EndEvent(false);

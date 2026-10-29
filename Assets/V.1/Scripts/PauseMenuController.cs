@@ -9,6 +9,7 @@ public class PauseMenuController : MonoBehaviour
     [SerializeField] private PlayerController player;
 
     private bool isPaused = false;
+    public bool IsPaused => isPaused;
 
     void Start()
     {

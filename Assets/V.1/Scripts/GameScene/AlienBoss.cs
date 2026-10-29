@@ -160,7 +160,7 @@ public class AlienBoss : MonoBehaviour
 
     private void HandleLaserTimer()
     {
-        if (isAttacking || isUltimateWarning) return;
+        if (isAttacking || isUltimateWarning || PanicObstacleRules.EventRunning) return;
 
         nextLaserTimer -= Time.deltaTime;
         if (nextLaserTimer <= 0f)
@@ -203,8 +203,10 @@ public class AlienBoss : MonoBehaviour
 
         if (laserWarningLinePrefab != null)
         {
+            while (PanicObstacleRules.EventRunning) yield return null;
             warningLine = Instantiate(laserWarningLinePrefab, startPos, Quaternion.identity);
             standardShotWarning = warningLine;
+            HazardWarningCue.Attach(warningLine, true);
         }
 
         // Match V0: track the player's predicted attack height during the warning phase.
@@ -235,6 +237,7 @@ public class AlienBoss : MonoBehaviour
         }
 
         yield return new WaitForSeconds(laserHoldDuration);
+        while (PanicObstacleRules.EventRunning) yield return null;
 
         if (warningLine != null)
         {
@@ -260,6 +263,7 @@ public class AlienBoss : MonoBehaviour
         float fixedX = fixedRightX;
         for (int shot = 0; shot < ultimateLaserCount; shot++)
         {
+            while (PanicObstacleRules.EventRunning) yield return null;
             float attackOffsetY = Random.Range(minAttackOffsetY, maxAttackOffsetY);
             float targetY = playerTransform.position.y + attackOffsetY;
             float startY = transform.position.y;
@@ -271,6 +275,7 @@ public class AlienBoss : MonoBehaviour
                 ? Instantiate(laserWarningLinePrefab, new Vector3(fixedX, startY, transform.position.z), Quaternion.identity)
                 : null;
             ultimateShotWarning = shotWarning;
+            HazardWarningCue.Attach(shotWarning, true);
             while (timer < ultimateTrackDuration)
             {
                 timer += Time.deltaTime;
@@ -284,6 +289,7 @@ public class AlienBoss : MonoBehaviour
             transform.position = new Vector3(fixedX, targetY, transform.position.z);
             if (shotWarning != null) shotWarning.transform.position = transform.position;
             yield return new WaitForSeconds(Mathf.Max(0.25f, ultimateHoldDuration));
+            while (PanicObstacleRules.EventRunning) yield return null;
             if (shotWarning != null) Destroy(shotWarning);
             ultimateShotWarning = null;
 

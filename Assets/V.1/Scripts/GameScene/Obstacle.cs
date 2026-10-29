@@ -24,6 +24,7 @@ public class Obstacle : MonoBehaviour
     public float smokeSpawnInterval = 0.5f;
 
     private float smokeSpawnTimer;
+    private bool consumed;
 
     void Start()
     {
@@ -53,11 +54,30 @@ public class Obstacle : MonoBehaviour
 
     private void EmitSmoke()
     {
+        if (PanicObstacleRules.EventRunning) return;
         SmokeCloud.Create(smokePrefab, transform.position, smokeDurationRange, smokeLiftMultiplier);
     }
 
     private void OnTriggerEnter2D(Collider2D other)
     {
+        if (consumed) return;
+        if (other.CompareTag("Gum") || other.CompareTag("Player"))
+        {
+            consumed = true;
+            var owner = other.GetComponentInParent<PlayerController>();
+            if (owner != null && owner.gum != null)
+            {
+                // Coalesce simultaneous contacts, without granting lasting immunity.
+                if (owner.gum.LastInstantPopFrame == Time.frameCount)
+                { Destroy(gameObject); return; }
+                if (PanicObstacleRules.InterruptForHit(owner))
+                {
+                    owner.gum.PopWithoutRecovery();
+                    Destroy(gameObject);
+                    return;
+                }
+            }
+        }
         // 1. ถ้าชนโดนหมากฝรั่ง (ต้องตั้ง Tag ชิ้นส่วนหมากฝรั่งเป็น "Gum")
         if (other.CompareTag("Gum"))
         {

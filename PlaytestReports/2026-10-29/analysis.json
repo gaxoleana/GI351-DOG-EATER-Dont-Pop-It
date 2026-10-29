@@ -1,0 +1,30 @@
+{
+  "samples": 1421,
+  "eventCounts": {
+    "Red_Mash": 18,
+    "Blue_HoldOff": 26
+  },
+  "eventTotal": 44,
+  "warningsAudited": 90,
+  "warningsNeverVisible": 2,
+  "maxDrawdownWorld": 35.87133999999992,
+  "cumulativeDescentWorld": 1016.9988000000003,
+  "popsNearThreshold": 0,
+  "lastTelemetry": {
+    "t": 712.761,
+    "gameTime": 642.726257,
+    "y": 3023.20947,
+    "vy": 0.0,
+    "ratio": 0.390960842,
+    "threshold": 2.0,
+    "gum": "Normal",
+    "held": true,
+    "eventState": "Idle",
+    "eventType": "None",
+    "mashes": 7,
+    "target": 10,
+    "scale": 1.0,
+    "immune": false,
+    "obstacles": 127
+  }
+}

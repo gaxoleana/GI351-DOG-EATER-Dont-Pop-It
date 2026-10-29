@@ -52,6 +52,10 @@ public class AltitudeProgressBarUI : MonoBehaviour
     public float planeUnlockKm = 10f;
     public float alienUnlockKm = 20f;
 
+    private int highestVisualKilometer;
+    private float progressPulse;
+    private Color baseFillColor;
+    private Vector3 baseIconScale;
     private bool birdUnlocked = false;
     private bool planeUnlocked = false;
     private bool alienUnlocked = false;
@@ -71,6 +75,8 @@ public class AltitudeProgressBarUI : MonoBehaviour
             if (player != null) playerTransform = player.transform;
         }
 
+        if (progressFillImage != null) baseFillColor = progressFillImage.color;
+        if (playerIcon != null) baseIconScale = playerIcon.localScale;
         // ตั้งสถานะเริ่มต้นให้แน่ใจว่า *Off เปิด, *On ปิด
         SetIconState(birdOff, birdOn, false);
         SetIconState(planeOff, planeOn, false);
@@ -125,6 +131,17 @@ public class AltitudeProgressBarUI : MonoBehaviour
             alienUnlocked = true;
             SetIconState(alienOff, alienOn, true);
         }
+
+        int visualKm = Mathf.Min(29, Mathf.FloorToInt(currentAltitude / 100f));
+        if (!hasReachedFinishLine && visualKm > highestVisualKilometer)
+        {
+            highestVisualKilometer = visualKm;
+            progressPulse = 1f;
+            FlightRewardPresentation.ProgressPulse(playerTransform);
+        }
+        progressPulse = Mathf.MoveTowards(progressPulse, 0f, Time.deltaTime / 0.6f);
+        if (progressFillImage != null) progressFillImage.color = Color.Lerp(baseFillColor, new Color(0.65f, 1f, 0.85f), progressPulse);
+        if (playerIcon != null) playerIcon.localScale = baseIconScale * (1f + Mathf.Sin(progressPulse * Mathf.PI) * 0.12f);
 
         // 6. เช็กเงื่อนไขเข้าเส้นชัย
         if (progressRatio >= 1.0f && !hasReachedFinishLine)

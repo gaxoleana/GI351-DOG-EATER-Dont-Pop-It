@@ -83,6 +83,7 @@ public class ObstacleSpawner : MonoBehaviour
     private float nextSpawnTimer;
     private float nextRocketSpawnTimer;
     private bool planeGroupActive;
+    private bool firstRocketShown;
 
     void Start()
     {
@@ -108,6 +109,7 @@ public class ObstacleSpawner : MonoBehaviour
         // 1. เช็กเข้าสู่ช่วง Boss Fight หลัง 2000m (หยุดการสปอว์นอุปสรรคปกติ)
         if (currentAltitude >= bossAltitude)
         {
+            if (PanicObstacleRules.EventRunning) return;
             if (!isBossPhase)
             {
                 isBossPhase = true;
@@ -117,6 +119,11 @@ public class ObstacleSpawner : MonoBehaviour
             return;
         }
 
+        if (!firstRocketShown && currentAltitude >= 50f && rocketPrefab != null && !PanicObstacleRules.EventRunning)
+        {
+            firstRocketShown = true;
+            StartCoroutine(SpawnRocketSequence());
+        }
         if (currentAltitude >= birdMinAltitude && rocketPrefab != null)
         {
             nextRocketSpawnTimer -= Time.deltaTime;
@@ -136,7 +143,7 @@ public class ObstacleSpawner : MonoBehaviour
         }
 
         // 2. ลูปสปอว์นอุปสรรคปกติ (เริ่มทำงานตั้งแต่ 100m ขึ้นไป)
-        if (currentAltitude >= birdMinAltitude)
+        if (currentAltitude >= birdMinAltitude && !PanicObstacleRules.EventRunning)
         {
             nextSpawnTimer -= Time.deltaTime;
             if (nextSpawnTimer <= 0f)
@@ -165,7 +172,7 @@ public class ObstacleSpawner : MonoBehaviour
 
     private IEnumerator SpawnRocketSequence()
     {
-        float spawnY = playerTransform.position.y + Random.Range(minOffsetY, maxOffsetY);
+        // A collectible leads the current climb by a reachable amount, rather than using a hazard lane.
         // A thought icon announces a collectible, without using a danger lane.
         float leadTime = Mathf.Max(1f, warningDuration);
         var icon = rocketPrefab != null ? rocketPrefab.GetComponent<SpriteRenderer>() : null;
@@ -177,13 +184,20 @@ public class ObstacleSpawner : MonoBehaviour
             yield break;
         }
 
+        var camera = Camera.main;
+        float halfWidth = camera != null ? camera.orthographicSize * camera.aspect : 5f;
         bool fromRight = Random.value < 0.5f;
-        float spawnX = fromRight ? spawnXRight : -spawnXRight;
+        float spawnX = fromRight ? halfWidth + 1.5f : -halfWidth - 1.5f;
+        var body = playerTransform.GetComponent<Rigidbody2D>();
+        float climb = body != null ? Mathf.Max(0f, body.linearVelocity.y) : 0f;
+        float crossingTime = Mathf.Abs(spawnX - playerTransform.position.x) / 5f;
+        float spawnY = playerTransform.position.y + Mathf.Clamp(climb * crossingTime, 2f, 7f);
         GameObject rocketObject = Instantiate(rocketPrefab, new Vector3(spawnX, spawnY, 0f), Quaternion.identity);
 
         RocketPickup rocket = rocketObject.GetComponent<RocketPickup>();
         if (rocket != null)
         {
+            rocket.moveSpeed = 5f;
             rocket.Initialize(fromRight ? Vector2.left : Vector2.right);
         }
 
@@ -221,6 +235,7 @@ public class ObstacleSpawner : MonoBehaviour
 
     private IEnumerator SpawnObstacleSequence(float currentAltitude)
     {
+        while (PanicObstacleRules.EventRunning) yield return null;
         // 1. คัดเลือกชนิด Prefab ตามช่วงความสูง
         List<GameObject> availablePrefabs = new List<GameObject>();
 
@@ -270,6 +285,7 @@ public class ObstacleSpawner : MonoBehaviour
         GameObject warningPrefab = isBird ? warningLinePrefab : warningLinePlanePrefab;
         for (int i = 0; i < obstacleCount; i++)
         {
+            while (PanicObstacleRules.EventRunning) yield return null;
             GameObject warningLine = null;
             if (warningPrefab != null)
             {
@@ -278,35 +294,17 @@ public class ObstacleSpawner : MonoBehaviour
             }
 
             GameObject caution = null;
-            GameObject cautionPrefab = spawnFromRights[i] ? cautionRightPrefab : cautionLeftPrefab;
-            if (cautionPrefab != null)
-            {
-                float cautionX = spawnFromRights[i] ? cautionXRight : cautionXLeft;
-                caution = Instantiate(
-                    cautionPrefab,
-                    new Vector3(cautionX, spawnHeights[i], 0f),
-                    Quaternion.identity,
-                    transform);
-                caution.SetActive(false);
-            }
+            HazardWarningCue.Attach(warningLine, spawnFromRights[i]);
 
             // รอให้ Warning ของลำนี้ทำงานจนครบเวลา ก่อน Spawn ลำเดียวกัน
             float timer = 0f;
-            float blinkTimer = 0f;
-            bool cautionVisible = false;
             while (timer < warningDuration)
             {
                 timer += Time.deltaTime;
-                blinkTimer += Time.deltaTime;
-                if (caution != null && blinkTimer >= cautionBlinkInterval)
-                {
-                    blinkTimer = 0f;
-                    cautionVisible = !cautionVisible;
-                    caution.SetActive(cautionVisible);
-                }
                 yield return null;
             }
 
+            while (PanicObstacleRules.EventRunning) yield return null;
             Destroy(warningLine);
             Destroy(caution);
 

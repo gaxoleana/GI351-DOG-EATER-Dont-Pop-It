@@ -1,0 +1,42 @@
+{
+  "damage": {
+    "blackActive": false,
+    "blackAlpha": 0.0
+  },
+  "boundary": {
+    "r": 0.78039217,
+    "green": 0.8784314,
+    "b": 1.0,
+    "a": 0.2784314,
+    "width": 0.025,
+    "recovery": 1.0
+  },
+  "clock": {
+    "duringSlowMotion": 0.602232,
+    "duringPause": 0.0
+  },
+  "milestone": {
+    "threshold": 1.0,
+    "spark": true
+  },
+  "warning": {
+    "x": 0.92,
+    "y": 0.9024997,
+    "visible": true
+  },
+  "eventUI": {
+    "parented": true,
+    "scale": 1.0,
+    "font": 5.04
+  },
+  "rocket": {
+    "speed": 5.0,
+    "gap": 2.0,
+    "boost": 50.0
+  },
+  "ending": {
+    "panel": true,
+    "outsideGraphics": 0,
+    "buttons": true
+  }
+}

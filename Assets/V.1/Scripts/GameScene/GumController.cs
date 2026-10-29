@@ -461,6 +461,25 @@ public class GumController : MonoBehaviour
         currentSize = minSize;
     }
 
+    public int LastInstantPopFrame { get; private set; } = -1;
+
+    public void PopWithoutRecovery()
+    {
+        StopAllCoroutines();
+        LastInstantPopFrame = Time.frameCount;
+        currentSize = 0f;
+        currentState = GumState.Normal;
+        isForcedRecovery = false;
+        stateTimer = 0f;
+        recoveryDuration = 0f;
+        recoveryStartTime = Time.time;
+        RefreshGumVisibility();
+        if (ringRenderer != null) ringRenderer.enabled = false;
+        FirePopShake();
+        OnPop?.Invoke();
+        OnGumReset?.Invoke();
+    }
+
     private void Pop()
     {
         currentState = GumState.Popped;

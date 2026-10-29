@@ -6,10 +6,10 @@ using System.Collections;
 public class FlightRewardPresentation : MonoBehaviour
 {
     private static FlightRewardPresentation instance;
-    private Image goldEdge, endingFade;
+    private Image goldEdge, endingFade, hitEdge;
     private Texture2D edgeTexture, cloudTexture;
     private Sprite edgeSprite, cloudSprite;
-    private float flash;
+    private float flash, hit;
     public static float FlashIntensity => instance != null ? instance.flash : 0f;
 
     private static FlightRewardPresentation Get()
@@ -53,6 +53,7 @@ public class FlightRewardPresentation : MonoBehaviour
         edgeSprite = Sprite.Create(edgeTexture, new Rect(0, 0, 64, 64), new Vector2(.5f, .5f));
         goldEdge.sprite = edgeSprite;
         goldEdge.color = Color.clear;
+        hitEdge = MakeImage(transform, "Hit Edge"); hitEdge.sprite = edgeSprite; hitEdge.color = Color.clear;
         cloudTexture = new Texture2D(64, 64, TextureFormat.RGBA32, false);
         cloudTexture.wrapMode = TextureWrapMode.Clamp;
         for (int y = 0; y < 64; y++)
@@ -65,6 +66,32 @@ public class FlightRewardPresentation : MonoBehaviour
         }
         cloudTexture.SetPixels(pixels); cloudTexture.Apply(false, true);
         cloudSprite = Sprite.Create(cloudTexture, new Rect(0, 0, 64, 64), new Vector2(.5f, .5f), 32f);
+    }
+    public static void HitFlash() { Get().hit = 1f; }
+    public static void ProgressPulse(Transform player)
+    {
+        if (player != null) Get().StartCoroutine(Get().ProgressBloom(player.position));
+    }
+    private IEnumerator ProgressBloom(Vector3 position)
+    {
+        var root = new GameObject("Progress Spark");
+        var line = root.AddComponent<LineRenderer>();
+        var material = new Material(Shader.Find("Sprites/Default"));
+        line.sharedMaterial = material; line.useWorldSpace = true; line.loop = true;
+        line.positionCount = 32; line.widthMultiplier = 0.035f; line.sortingOrder = 40;
+        float t = 0f;
+        while (t < 0.45f)
+        {
+            t += Time.deltaTime; float ratio = Mathf.Clamp01(t / 0.45f);
+            line.startColor = line.endColor = new Color(0.65f, 1f, 0.85f, (1f - ratio) * 0.7f);
+            for (int i = 0; i < 32; i++)
+            {
+                float a = i / 32f * Mathf.PI * 2f;
+                line.SetPosition(i, position + new Vector3(Mathf.Cos(a), Mathf.Sin(a), 0f) * Mathf.Lerp(0.5f, 1.5f, ratio));
+            }
+            yield return null;
+        }
+        Destroy(root); Destroy(material);
     }
     public static void Flash() { Get().flash = 1f; }
     public static void SetEndingFade(float alpha) { Get().endingFade.color = new Color(0, 0, 0, Mathf.Clamp01(alpha)); }
@@ -109,6 +136,8 @@ public class FlightRewardPresentation : MonoBehaviour
     void Update()
     {
         flash = Mathf.MoveTowards(flash, 0f, Time.unscaledDeltaTime / .65f);
+        hit = Mathf.MoveTowards(hit, 0f, Time.unscaledDeltaTime / .28f);
+        if (hitEdge != null) hitEdge.color = new Color(1f, 0.38f, 0.3f, hit * 0.85f);
         if (goldEdge != null) goldEdge.color = new Color(1, 1, 1, Mathf.Sin(flash * Mathf.PI * .5f));
     }
     void OnDestroy()
