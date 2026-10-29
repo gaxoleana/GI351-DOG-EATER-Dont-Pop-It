@@ -29627,9 +29627,9 @@ MonoBehaviour:
   minTargetMashes: 3
   maxTargetMashes: 12
   targetMashes: 10
-  blueEventDuration: 3
-  minBlueEventDuration: 2
-  maxBlueEventDuration: 4
+  blueEventDuration: 1.5
+  minBlueEventDuration: 1
+  maxBlueEventDuration: 2
   blueEventGravityMultiplier: 0.1
   currentBlueDuration: 0
   redUIContainer: {fileID: 352850866}

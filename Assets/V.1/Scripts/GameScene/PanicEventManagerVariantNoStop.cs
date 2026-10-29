@@ -86,13 +86,13 @@ public class PanicEventManagerVariantNoStop : MonoBehaviour
 
     [Header("Blue Event (Hold Off) Settings")]
     [Tooltip("ระยะเวลาที่ต้องห้ามกดปุ่ม (วินาที)")]
-    public float blueEventDuration = 3.0f;
+    public float blueEventDuration = 1.5f;
 
     [Tooltip("ระยะเวลาต่ำสุดที่ต้องห้ามกดปุ่ม (วินาที)")]
-    public float minBlueEventDuration = 1.5f;
+    public float minBlueEventDuration = 1f;
 
     [Tooltip("ระยะเวลาสูงสุดที่ต้องห้ามกดปุ่ม (วินาที)")]
-    public float maxBlueEventDuration = 3.5f;
+    public float maxBlueEventDuration = 2f;
 
     [Tooltip("ตัวคูณแรงโน้มถ่วงระหว่าง Blue Event (0 = ลอยค้าง, ค่าน้อยมาก = ตกช้ามาก)")]
     public float blueEventGravityMultiplier = 0.05f;
@@ -142,6 +142,32 @@ public class PanicEventManagerVariantNoStop : MonoBehaviour
     private float blueGravityBefore;
     private bool blueInputLockedBefore;
     private bool blueOwnsPlayer;
+    private bool blueOwnsClock;
+    private float blueTimeScaleBefore;
+    private float blueFixedDeltaBefore;
+    private float blueSlowScale;
+    [Range(0.1f, 1f)] public float blueWorldSpeed = 0.3f;
+
+    private void BeginBlueSlowMotion()
+    {
+        if (blueOwnsClock || Time.timeScale <= 0f) return;
+        blueTimeScaleBefore = Time.timeScale;
+        blueFixedDeltaBefore = Time.fixedDeltaTime;
+        float factor = Mathf.Clamp(blueWorldSpeed, 0.1f, 1f);
+        blueSlowScale = blueTimeScaleBefore * factor;
+        Time.timeScale = blueSlowScale;
+        Time.fixedDeltaTime = blueFixedDeltaBefore * factor;
+        blueOwnsClock = true;
+    }
+
+    private void RestoreBlueClock()
+    {
+        if (!blueOwnsClock) return;
+        // Preserve an external pause while restoring the physics step.
+        if (Time.timeScale > 0f) Time.timeScale = blueTimeScaleBefore;
+        Time.fixedDeltaTime = blueFixedDeltaBefore;
+        blueOwnsClock = false;
+    }
     [Header("Blue Stability")]
     [Min(0f)] public float blueReleaseGrace = 0.25f;
     [Range(-1f, 0f)] public float blueDriftSpeed = -0.3f;
@@ -149,6 +175,7 @@ public class PanicEventManagerVariantNoStop : MonoBehaviour
     private void PrepareBluePlayer()
     {
         if (blueOwnsPlayer || player == null) return;
+        BeginBlueSlowMotion();
         blueInputLockedBefore = player.IsInputLocked;
         blueBody = player.GetComponent<Rigidbody2D>();
         if (blueBody != null)
@@ -156,7 +183,7 @@ public class PanicEventManagerVariantNoStop : MonoBehaviour
             blueGravityBefore = blueBody.gravityScale;
             blueBody.gravityScale = 0f;
             Vector2 v = blueBody.linearVelocity;
-            v.y = Mathf.Clamp(v.y, -0.6f, 0.6f);
+            v.y = Mathf.Clamp(v.y, -0.6f, 0f);
             blueBody.linearVelocity = v;
         }
         player.SetInputLocked(true);
@@ -167,7 +194,7 @@ public class PanicEventManagerVariantNoStop : MonoBehaviour
     {
         if (!blueOwnsPlayer || blueBody == null || currentEvent != EventType.Blue_HoldOff) return;
         Vector2 v = blueBody.linearVelocity;
-        v.y = Mathf.MoveTowards(v.y, blueDriftSpeed, 6f * Time.fixedDeltaTime);
+        v.y = Mathf.MoveTowards(Mathf.Min(0f, v.y), blueDriftSpeed, 6f * Time.fixedDeltaTime);
         blueBody.linearVelocity = v;
     }
 
@@ -202,7 +229,7 @@ public class PanicEventManagerVariantNoStop : MonoBehaviour
         float elapsed = 0f;
         while (elapsed < duration)
         {
-            elapsed += Time.deltaTime;
+            elapsed += Time.timeScale > 0f ? Time.unscaledDeltaTime : 0f;
             if (warningRectTransform != null)
             {
                 if (enter > 0f && elapsed < enter)
@@ -257,6 +284,7 @@ public class PanicEventManagerVariantNoStop : MonoBehaviour
 
     void Update()
     {
+        if (blueOwnsClock && Time.timeScale > 0f) Time.timeScale = blueSlowScale;
         if (noiseComponent != null && currentState == EventState.Active)
         {
             currentShakeAmplitude = Mathf.Lerp(currentShakeAmplitude, currentEvent == EventType.Blue_HoldOff ? activeShakeAmplitude * 0.12f : activeShakeAmplitude, Time.deltaTime * shakeDamping);
@@ -410,8 +438,8 @@ public class PanicEventManagerVariantNoStop : MonoBehaviour
         else if (currentEvent == EventType.Blue_HoldOff)
         {
             // 🎯 สุ่มระยะเวลา Blue Event (เช่น 1.5 ถึง 3.5 วินาที)
-            currentBlueDuration = Random.Range(Mathf.Max(0.5f, Mathf.Min(minBlueEventDuration, maxBlueEventDuration)),
-                Mathf.Max(0.5f, Mathf.Max(minBlueEventDuration, maxBlueEventDuration)));
+            currentBlueDuration = Random.Range(Mathf.Clamp(Mathf.Min(minBlueEventDuration, maxBlueEventDuration), 1f, 2f),
+                Mathf.Clamp(Mathf.Max(minBlueEventDuration, maxBlueEventDuration), 1f, 2f));
             stateTimer = currentBlueDuration;
 
             if (panicVignetteController != null) panicVignetteController.SetVignetteColor(new Color(0.2f, 0.55f, 1f));
@@ -486,10 +514,10 @@ public class PanicEventManagerVariantNoStop : MonoBehaviour
 
     private void UpdateBlueEvent()
     {
-        if (Time.deltaTime <= 0f) return;
+        if (Time.timeScale <= 0f) return;
         // A collected reward takes priority over the blue drift constraint.
         if (player != null && player.IsObstacleImmune) { EndEvent(true); return; }
-        stateTimer = Mathf.Max(0f, stateTimer - Time.deltaTime);
+        stateTimer = Mathf.Max(0f, stateTimer - Time.unscaledDeltaTime);
         if (blueTimerText != null) blueTimerText.text = $"{stateTimer:0.0}s";
         if (blueProgressBar != null && currentBlueDuration > 0f)
             blueProgressBar.fillAmount = Mathf.Clamp01(1f - stateTimer / currentBlueDuration);
@@ -521,8 +549,8 @@ public class PanicEventManagerVariantNoStop : MonoBehaviour
     private void EndEvent(bool success)
     {
         bool endingBlue = currentEvent == EventType.Blue_HoldOff || blueOwnsPlayer;
-        // Blue never owns global time; preserve pause or slow motion on cancellation.
-        if (!endingBlue) Time.timeScale = 1f;
+        if (endingBlue) RestoreBlueClock();
+        else Time.timeScale = 1f;
 
         if (warningAnimCoroutine != null)
         {
