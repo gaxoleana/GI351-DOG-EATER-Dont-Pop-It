@@ -138,6 +138,91 @@ public class PanicEventManagerVariantNoStop : MonoBehaviour
     private float nextEventCooldown;
     private Vector2 defaultWarningPos;
     private Coroutine warningAnimCoroutine;
+    private Rigidbody2D blueBody;
+    private float blueGravityBefore;
+    private bool blueInputLockedBefore;
+    private bool blueOwnsPlayer;
+    [Header("Blue Stability")]
+    [Min(0f)] public float blueReleaseGrace = 0.25f;
+    [Range(-1f, 0f)] public float blueDriftSpeed = -0.3f;
+
+    private void PrepareBluePlayer()
+    {
+        if (blueOwnsPlayer || player == null) return;
+        blueInputLockedBefore = player.IsInputLocked;
+        blueBody = player.GetComponent<Rigidbody2D>();
+        if (blueBody != null)
+        {
+            blueGravityBefore = blueBody.gravityScale;
+            blueBody.gravityScale = 0f;
+            Vector2 v = blueBody.linearVelocity;
+            v.y = Mathf.Clamp(v.y, -0.6f, 0.6f);
+            blueBody.linearVelocity = v;
+        }
+        player.SetInputLocked(true);
+        blueOwnsPlayer = true;
+    }
+
+    void FixedUpdate()
+    {
+        if (!blueOwnsPlayer || blueBody == null || currentEvent != EventType.Blue_HoldOff) return;
+        Vector2 v = blueBody.linearVelocity;
+        v.y = Mathf.MoveTowards(v.y, blueDriftSpeed, 6f * Time.fixedDeltaTime);
+        blueBody.linearVelocity = v;
+    }
+
+    private IEnumerator AnimateBlueWarning()
+    {
+        PrepareBluePlayer();
+        if (panicVignetteController != null)
+        {
+            panicVignetteController.SetVignetteColor(new Color(0.2f, 0.55f, 1f));
+            panicVignetteController.SetVignetteActive(true);
+        }
+        // Restore the authored blue warning before showing the active-event HUD.
+        if (blueUIContainer != null) blueUIContainer.SetActive(false);
+        if (warningDimmerObject != null) warningDimmerObject.SetActive(true);
+        if (warningImage != null)
+        {
+            warningImage.sprite = blueWarningSprite;
+            warningImage.enabled = true;
+            warningImage.SetNativeSize();
+        }
+        Vector2 center = defaultWarningPos;
+        Vector2 left = center - Vector2.right * slideDistanceX;
+        Vector2 right = center + Vector2.right * slideDistanceX;
+        if (warningRectTransform != null)
+        {
+            warningRectTransform.anchoredPosition = left;
+            warningRectTransform.gameObject.SetActive(true);
+        }
+        float duration = Mathf.Max(0.25f, warningDuration);
+        float enter = Mathf.Clamp(slideInDuration, 0f, duration * 0.5f);
+        float exit = Mathf.Clamp(slideOutDuration, 0f, duration * 0.5f);
+        float elapsed = 0f;
+        while (elapsed < duration)
+        {
+            elapsed += Time.deltaTime;
+            if (warningRectTransform != null)
+            {
+                if (enter > 0f && elapsed < enter)
+                    warningRectTransform.anchoredPosition = Vector2.Lerp(left, center, Mathf.SmoothStep(0f, 1f, elapsed / enter));
+                else if (exit > 0f && elapsed > duration - exit)
+                    warningRectTransform.anchoredPosition = Vector2.Lerp(center, right, Mathf.SmoothStep(0f, 1f, (elapsed - duration + exit) / exit));
+                else
+                    warningRectTransform.anchoredPosition = center;
+            }
+            yield return null;
+        }
+        if (warningRectTransform != null)
+        {
+            warningRectTransform.gameObject.SetActive(false);
+            warningRectTransform.anchoredPosition = center;
+        }
+        if (warningDimmerObject != null) warningDimmerObject.SetActive(false);
+        warningAnimCoroutine = null;
+        StartActiveEvent();
+    }
 
     void Start()
     {
@@ -164,15 +249,17 @@ public class PanicEventManagerVariantNoStop : MonoBehaviour
 
     void OnDisable()
     {
-        // Safety Check: คืนค่า Time.timeScale เสมอเผื่อ Scene เปลี่ยนหรือ Object ถูกสคริปต์อื่นปิด
-        Time.timeScale = 1f;
+        if (currentEvent == EventType.Blue_HoldOff || blueOwnsPlayer)
+            EndEvent(false);
+        else
+            Time.timeScale = 1f;
     }
 
     void Update()
     {
         if (noiseComponent != null && currentState == EventState.Active)
         {
-            currentShakeAmplitude = Mathf.Lerp(currentShakeAmplitude, activeShakeAmplitude, Time.deltaTime * shakeDamping);
+            currentShakeAmplitude = Mathf.Lerp(currentShakeAmplitude, currentEvent == EventType.Blue_HoldOff ? activeShakeAmplitude * 0.12f : activeShakeAmplitude, Time.deltaTime * shakeDamping);
             noiseComponent.AmplitudeGain = currentShakeAmplitude;
         }
 
@@ -218,11 +305,14 @@ public class PanicEventManagerVariantNoStop : MonoBehaviour
     {
         currentState = EventState.Warning;
 
-        // สั่งหยุดเวลาเกมทั้งหมด (Physics, Movement, Spawner จะหยุดนิ่ง)
-        Time.timeScale = 0f;
-
-        // สุ่มประเภท Event ไว้ล่วงหน้า
         currentEvent = Random.value > 0.5f ? EventType.Red_Mash : EventType.Blue_HoldOff;
+        if (currentEvent == EventType.Blue_HoldOff)
+        {
+            if (warningAnimCoroutine != null) StopCoroutine(warningAnimCoroutine);
+            warningAnimCoroutine = StartCoroutine(AnimateBlueWarning());
+            return;
+        }
+        Time.timeScale = 0f;
 
         // เปิดใช้งาน GameObject Dimmer
         if (warningDimmerObject != null)
@@ -300,10 +390,11 @@ public class PanicEventManagerVariantNoStop : MonoBehaviour
         stateTimer = (currentEvent == EventType.Red_Mash) ? redEventDuration : blueEventDuration;
         currentMashes = 0;
 
-        if (player != null) player.SetInputLocked(true);
+        if (currentEvent == EventType.Blue_HoldOff) PrepareBluePlayer();
+        else if (player != null) player.SetInputLocked(true);
         if (panicVignetteController != null) panicVignetteController.SetVignetteActive(true);
 
-        TriggerContinuousShake(activeShakeAmplitude);
+        TriggerContinuousShake(currentEvent == EventType.Blue_HoldOff ? activeShakeAmplitude * 0.12f : activeShakeAmplitude);
 
         if (currentEvent == EventType.Red_Mash)
         {
@@ -319,23 +410,24 @@ public class PanicEventManagerVariantNoStop : MonoBehaviour
         else if (currentEvent == EventType.Blue_HoldOff)
         {
             // 🎯 สุ่มระยะเวลา Blue Event (เช่น 1.5 ถึง 3.5 วินาที)
-            currentBlueDuration = Random.Range(minBlueEventDuration, maxBlueEventDuration);
+            currentBlueDuration = Random.Range(Mathf.Max(0.5f, Mathf.Min(minBlueEventDuration, maxBlueEventDuration)),
+                Mathf.Max(0.5f, Mathf.Max(minBlueEventDuration, maxBlueEventDuration)));
             stateTimer = currentBlueDuration;
 
-            if (panicVignetteController != null) panicVignetteController.SetVignetteColor(Color.blue);
+            if (panicVignetteController != null) panicVignetteController.SetVignetteColor(new Color(0.2f, 0.55f, 1f));
 
-            if (player != null)
+            if (blueUIContainer != null) blueUIContainer.SetActive(true);
+            if (blueProgressBar != null)
             {
-                // 1. ลด Gravity ให้เกือบเป็นศูนย์ ทำให้ผู้เล่นลอยอยู่กับที่
-                player.SetGravityMultiplier(blueEventGravityMultiplier);
-
-                // 2. ตัดความเร็วร่วงสะสมทันที ไม่ให้เริ่ม Event ด้วยการดิ่งลง
-                player.DampDownwardVelocity(0f);
+                blueProgressBar.gameObject.SetActive(true);
+                blueProgressBar.enabled = true;
+                blueProgressBar.fillAmount = 0f;
             }
-
-            if (blueUIContainer != null)
+            if (blueTimerText != null)
             {
-                blueUIContainer.SetActive(true);
+                blueTimerText.gameObject.SetActive(true);
+                blueTimerText.enabled = true;
+                blueTimerText.text = $"{stateTimer:0.0}s";
             }
         }
     }
@@ -394,33 +486,25 @@ public class PanicEventManagerVariantNoStop : MonoBehaviour
 
     private void UpdateBlueEvent()
     {
-        stateTimer -= Time.deltaTime;
-
-        if (blueTimerText != null)
-        {
-            blueTimerText.text = $"{Mathf.Max(0f, stateTimer):0.0}s";
-        }
-
-        // อัปเดต UI หลอดนับถอยหลัง / หลอดเติมเต็มตามเวลาที่สุ่มได้จริง
+        if (Time.deltaTime <= 0f) return;
+        // A collected reward takes priority over the blue drift constraint.
+        if (player != null && player.IsObstacleImmune) { EndEvent(true); return; }
+        stateTimer = Mathf.Max(0f, stateTimer - Time.deltaTime);
+        if (blueTimerText != null) blueTimerText.text = $"{stateTimer:0.0}s";
         if (blueProgressBar != null && currentBlueDuration > 0f)
-        {
-            // หลอดจะค่อยๆ เต็มจาก 0 ถึง 1 เมื่อใกล้หมดเวลา
-            float progress = 1f - (stateTimer / currentBlueDuration);
-            blueProgressBar.fillAmount = progress;
-        }
+            blueProgressBar.fillAmount = Mathf.Clamp01(1f - stateTimer / currentBlueDuration);
 
-        // ถ้าเผลอกดปุ่มระหว่าง Blue Event -> แพ้ทันที
-        if (Input.GetMouseButtonDown(0) || Input.GetKeyDown(KeyCode.Space))
-        {
-            FailEvent();
-            return;
-        }
+        SubmitBlueInput(Input.GetMouseButton(0) || Input.GetKey(KeyCode.Space));
+        if (currentState == EventState.Active && stateTimer <= 0f) EndEvent(true);
+    }
 
-        // ห้ามกดจนหมดเวลา -> ชนะ Event
-        if (stateTimer <= 0f)
-        {
-            EndEvent(true);
-        }
+    // Same held/released rule for the live controls and API-driven verification.
+    public void SubmitBlueInput(bool held)
+    {
+        if (Time.timeScale <= 0f) return;
+        if (currentState != EventState.Active || currentEvent != EventType.Blue_HoldOff) return;
+        if (currentBlueDuration - stateTimer < blueReleaseGrace) return;
+        if (held) FailEvent();
     }
 
     private void FailEvent()
@@ -436,7 +520,9 @@ public class PanicEventManagerVariantNoStop : MonoBehaviour
 
     private void EndEvent(bool success)
     {
-        Time.timeScale = 1f;
+        bool endingBlue = currentEvent == EventType.Blue_HoldOff || blueOwnsPlayer;
+        // Blue never owns global time; preserve pause or slow motion on cancellation.
+        if (!endingBlue) Time.timeScale = 1f;
 
         if (warningAnimCoroutine != null)
         {
@@ -449,10 +535,20 @@ public class PanicEventManagerVariantNoStop : MonoBehaviour
 
         if (player != null)
         {
-            player.SetInputLocked(false);
-            player.ResetGravity(); // 🔹 คืนค่าแรงโน้มถ่วงกลับเป็นระดับปกติทันทีเมื่อจบ Event
+            if (endingBlue)
+            {
+                if (blueOwnsPlayer) player.SetInputLocked(blueInputLockedBefore);
+            }
+            else
+            {
+                player.SetInputLocked(false);
+                player.ResetGravity();
+            }
         }
 
+        if (blueOwnsPlayer && blueBody != null) blueBody.gravityScale = blueGravityBefore;
+        blueOwnsPlayer = false;
+        blueBody = null;
         if (panicVignetteController != null) panicVignetteController.SetVignetteActive(false);
 
         StopCameraShake();

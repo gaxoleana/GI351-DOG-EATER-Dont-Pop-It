@@ -13,7 +13,7 @@ public class DeadZonePlaceholder : MonoBehaviour
     public float radiusMultiplier = 0.55f;
 
     private LineRenderer line;
-    private float noInputTimer = 0f;
+    private PlayerController player;
     private float currentAlpha;
     public float hideDelay = 0.2f;
     public float fadeDuration = 0.35f;
@@ -36,41 +36,22 @@ public class DeadZonePlaceholder : MonoBehaviour
 
     void Start()
     {
+        player = GetComponentInParent<PlayerController>();
+        if (gum == null && player != null) gum = player.gum;
+        line.enabled = false;
         DrawCircle();
     }
 
-    void Update()
+    void LateUpdate()
     {
-        // 1) ดักจับ Input (Spacebar หรือ Mouse Button 0)
-        bool hasInput = Input.GetKey(KeyCode.Space) || Input.GetMouseButton(0);
-
-        if (hasInput)
-        {
-            noInputTimer = 0f;
-            currentAlpha = placeholderColor.a;
-            line.enabled = true;
-        }
-        else
-        {
-            noInputTimer += Time.deltaTime;
-            if (noInputTimer > hideDelay)
-            {
-                float fadeSpeed = fadeDuration > 0f ? placeholderColor.a / fadeDuration : placeholderColor.a;
-                currentAlpha = Mathf.MoveTowards(currentAlpha, 0f, fadeSpeed * Time.deltaTime);
-
-                if (currentAlpha <= 0f)
-                {
-                    line.enabled = false;
-                }
-            }
-        }
-
-        // 2) อัปเดตและวาดวงกลมเฉพาะตอนที่มันถูกเปิดให้แสดงเท่านั้น
-        if (line.enabled)
-        {
-            DrawCircle();
-        }
+        bool visible = player != null && player.IsBlowing && gum != null && gum.CanBlow() && gum.currentSize > 0.0001f;
+        line.enabled = visible;
+        currentAlpha = visible ? placeholderColor.a : 0f;
+        ApplyAlpha();
+        if (visible) DrawCircle();
     }
+
+    void OnDisable() { if (line != null) line.enabled = false; }
 
     private void DrawCircle()
     {

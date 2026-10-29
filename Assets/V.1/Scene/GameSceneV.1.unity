@@ -28606,6 +28606,7 @@ MonoBehaviour:
   currentState: 0
   currentSize: 0
   currentDeadZoneThreshold: 0
+  growthRewardMeters: 6000
 --- !u!58 &702462038
 CircleCollider2D:
   m_ObjectHideFlags: 0

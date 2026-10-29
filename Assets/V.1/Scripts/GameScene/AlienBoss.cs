@@ -82,6 +82,23 @@ public class AlienBoss : MonoBehaviour
     private float nextLaserTimer;
     private bool isAttacking;
     private bool isUltimateWarning;
+    private GameObject ultimateShotWarning;
+    private GameObject standardShotWarning;
+
+    public void BeginEndingExit()
+    {
+        StopAllCoroutines();
+        if (ultimateShotWarning != null) Destroy(ultimateShotWarning);
+        if (standardShotWarning != null) Destroy(standardShotWarning);
+        SetAngryWarning(false);
+        enabled = false;
+    }
+
+    void OnDestroy()
+    {
+        if (ultimateShotWarning != null) Destroy(ultimateShotWarning);
+        if (standardShotWarning != null) Destroy(standardShotWarning);
+    }
 
     void Start()
     {
@@ -187,6 +204,7 @@ public class AlienBoss : MonoBehaviour
         if (laserWarningLinePrefab != null)
         {
             warningLine = Instantiate(laserWarningLinePrefab, startPos, Quaternion.identity);
+            standardShotWarning = warningLine;
         }
 
         // Match V0: track the player's predicted attack height during the warning phase.
@@ -223,6 +241,7 @@ public class AlienBoss : MonoBehaviour
             Destroy(warningLine);
         }
 
+        standardShotWarning = null;
         FreezeLaserBeam(fixedX, trackedY);
 
         // รีเซ็ตความเร็ว Y ไม่ให้ Alien กระตุกตอนกลับเข้าสภาวะขยับปกติ
@@ -247,18 +266,26 @@ public class AlienBoss : MonoBehaviour
             float trackedY = startY;
             float timer = 0f;
 
-            // Each shot gets its own locked target height. No warning line is shown.
+            // Each shot shows the exact lane that will remain locked until firing.
+            GameObject shotWarning = laserWarningLinePrefab != null
+                ? Instantiate(laserWarningLinePrefab, new Vector3(fixedX, startY, transform.position.z), Quaternion.identity)
+                : null;
+            ultimateShotWarning = shotWarning;
             while (timer < ultimateTrackDuration)
             {
                 timer += Time.deltaTime;
-                float progress = Mathf.Clamp01(timer / ultimateTrackDuration);
+                float progress = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(timer / Mathf.Max(0.01f, ultimateTrackDuration)));
                 trackedY = Mathf.Lerp(startY, targetY, progress);
                 transform.position = new Vector3(fixedX, trackedY, transform.position.z);
+                if (shotWarning != null) shotWarning.transform.position = transform.position;
                 yield return null;
             }
 
             transform.position = new Vector3(fixedX, targetY, transform.position.z);
-            yield return new WaitForSeconds(ultimateHoldDuration);
+            if (shotWarning != null) shotWarning.transform.position = transform.position;
+            yield return new WaitForSeconds(Mathf.Max(0.25f, ultimateHoldDuration));
+            if (shotWarning != null) Destroy(shotWarning);
+            ultimateShotWarning = null;
 
             FreezeLaserBeam(fixedX, targetY);
 

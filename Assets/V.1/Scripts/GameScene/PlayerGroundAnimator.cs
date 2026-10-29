@@ -18,6 +18,9 @@ public class PlayerGroundAnimator : MonoBehaviour
     [Header("Gum Reference")]
     [SerializeField] private GumController gum;
 
+    [Header("Airborne Animation")]
+    [Range(0.1f, 1f)] public float airborneAnimationSpeed = 0.6f;
+    private bool grounded;
     private static readonly int IsGroundedHash = Animator.StringToHash("IsGrounded");
 
     void Start()
@@ -27,13 +30,20 @@ public class PlayerGroundAnimator : MonoBehaviour
 
     void Update()
     {
-        bool isGrounded = Physics2D.OverlapCircle(groundCheckPoint.position, groundCheckRadius, groundLayer);
-        animator.SetBool(IsGroundedHash, isGrounded);
+        bool isGrounded = groundCheckPoint != null && Physics2D.OverlapCircle(groundCheckPoint.position, groundCheckRadius, groundLayer);
+        grounded = isGrounded;
+        if (animator != null) animator.SetBool(IsGroundedHash, isGrounded);
 
         if (gum != null)
         {
             gum.SetGroundedHidden(isGrounded);
         }
+    }
+
+    void LateUpdate()
+    {
+        if (animator != null)
+            animator.speed = Mathf.MoveTowards(animator.speed, grounded ? 1f : airborneAnimationSpeed, Time.deltaTime * 3f);
     }
 
     // เผื่อ debug ดูรัศมีเช็คพื้นใน Scene view

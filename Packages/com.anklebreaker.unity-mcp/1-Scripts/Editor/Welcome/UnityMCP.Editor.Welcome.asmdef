@@ -1,0 +1,16 @@
+{
+    "name": "UnityMCP.Editor.Welcome",
+    "rootNamespace": "UnityMCP.Editor.Welcome",
+    "references": [],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -1,5 +1,14 @@
 {
   "dependencies": {
+    "com.anklebreaker.unity-mcp": {
+      "version": "file:com.anklebreaker.unity-mcp",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {
+        "com.unity.ugui": "1.0.0",
+        "com.unity.test-framework": "1.1.33"
+      }
+    },
     "com.unity.2d.animation": {
       "version": "15.1.0",
       "depth": 0,

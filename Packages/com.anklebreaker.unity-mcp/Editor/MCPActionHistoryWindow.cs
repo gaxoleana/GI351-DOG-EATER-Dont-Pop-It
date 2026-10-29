@@ -1,0 +1,560 @@
+using System;
+using System.Collections.Generic;
+using UnityEditor;
+using UnityEngine;
+
+namespace UnityMCP.Editor
+{
+    /// <summary>
+    /// Standalone editor window displaying the full action history for all MCP agents.
+    /// Supports filtering by agent, category, and search text; selecting target objects
+    /// in the hierarchy; undoing actions; and copying details to clipboard.
+    /// </summary>
+    public class MCPActionHistoryWindow : EditorWindow
+    {
+        // ═══════════════════════════════════════════════════════════
+        //  State
+        // ═══════════════════════════════════════════════════════════
+
+        private Vector2 _listScroll;
+        private Vector2 _detailScroll;
+        private int _selectedIndex = -1;
+        private MCPActionRecord _selectedRecord;
+
+        // Filters
+        private int _agentFilterIndex = 0;
+        private int _categoryFilterIndex = 0;
+        private string _searchText = "";
+        private string[] _agentOptions = { "All Agents" };
+        private string[] _categoryOptions = { "All Categories" };
+
+        // Cached results
+        private List<MCPActionRecord> _filteredRecords = new List<MCPActionRecord>();
+        private double _lastRefreshTime;
+        private long _lastHistoryRevision = -1;
+        private const double RefreshInterval = 0.5;
+
+        // Layout
+        private float _detailPanelHeight = 180f;
+        private bool _isResizingPanel;
+        private float RowHeight => EditorGUIUtility.singleLineHeight + 4;
+
+        // ═══════════════════════════════════════════════════════════
+        //  Colors & Styles (matching MCPDashboardWindow)
+        // ═══════════════════════════════════════════════════════════
+
+        private static readonly Color ColorGreen  = new Color(0.2f, 0.8f, 0.2f);
+        private static readonly Color ColorRed    = new Color(0.9f, 0.2f, 0.2f);
+        private static readonly Color ColorYellow = new Color(0.9f, 0.8f, 0.1f);
+        private static readonly Color ColorGrey   = new Color(0.5f, 0.5f, 0.5f);
+        private static readonly Color ColorBlue   = new Color(0.4f, 0.7f, 1.0f);
+        private static readonly Color ColorOrange = new Color(0.9f, 0.6f, 0.1f);
+
+        private GUIStyle _headerStyle;
+        private GUIStyle _dotStyle;
+        private GUIStyle _rowStyle;
+        private GUIStyle _rowAltStyle;
+        private GUIStyle _smallLabel;
+        private GUIStyle _detailLabel;
+        private GUIStyle _linkStyle;
+        private bool _stylesInitialized;
+
+        // ═══════════════════════════════════════════════════════════
+        //  Menu & Show
+        // ═══════════════════════════════════════════════════════════
+
+        [MenuItem("Window/AB Unity MCP/Action History", false, 10)]
+        public static void ShowWindow()
+        {
+            var window = GetWindow<MCPActionHistoryWindow>("MCP Action History");
+            window.minSize = new Vector2(500, 400);
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        //  Lifecycle
+        // ═══════════════════════════════════════════════════════════
+
+        private void OnEnable()
+        {
+            RefreshHistory();
+        }
+
+        private void OnDisable()
+        {
+            _filteredRecords.Clear();
+            _selectedRecord = null;
+            _selectedIndex = -1;
+            _stylesInitialized = false;
+            _headerStyle = _dotStyle = _rowStyle = _rowAltStyle = _smallLabel = _detailLabel = _linkStyle = null;
+        }
+
+        private void OnInspectorUpdate()
+        {
+            if (EditorApplication.timeSinceStartup - _lastRefreshTime > RefreshInterval)
+            {
+                _lastRefreshTime = EditorApplication.timeSinceStartup;
+                if (_lastHistoryRevision != MCPActionHistory.Revision)
+                {
+                    RefreshHistory();
+                }
+                // Native Undo/target availability can change without a new MCP action.
+                Repaint();
+            }
+        }
+
+        private void RefreshHistory()
+        {
+            RefreshFilters();
+            RefreshList();
+            _lastHistoryRevision = MCPActionHistory.Revision;
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        //  Styles
+        // ═══════════════════════════════════════════════════════════
+
+        private void InitStyles()
+        {
+            if (_stylesInitialized) return;
+
+            _headerStyle = new GUIStyle(EditorStyles.largeLabel)
+            {
+                fontSize = 14,
+                fontStyle = FontStyle.Bold,
+            };
+
+            _dotStyle = new GUIStyle(EditorStyles.label)
+            {
+                fontSize = 14,
+                alignment = TextAnchor.MiddleCenter,
+                fixedWidth = 18,
+            };
+
+            _rowStyle = new GUIStyle("CN Box")
+            {
+                padding = new RectOffset(4, 4, 2, 2),
+                margin = new RectOffset(0, 0, 0, 0),
+                fixedHeight = 0,
+            };
+
+            _rowAltStyle = new GUIStyle(_rowStyle);
+
+            _smallLabel = new GUIStyle(EditorStyles.miniLabel)
+            {
+                wordWrap = false,
+            };
+
+            _detailLabel = new GUIStyle(EditorStyles.label)
+            {
+                wordWrap = true,
+                richText = true,
+            };
+
+            _linkStyle = new GUIStyle(EditorStyles.miniLabel)
+            {
+                normal = { textColor = ColorBlue },
+                hover = { textColor = new Color(0.5f, 0.8f, 1.0f) },
+                wordWrap = false,
+            };
+
+            _stylesInitialized = true;
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        //  Refresh Data
+        // ═══════════════════════════════════════════════════════════
+
+        private void RefreshFilters()
+        {
+            string selectedAgent = _agentFilterIndex > 0 && _agentFilterIndex < _agentOptions.Length ? _agentOptions[_agentFilterIndex] : null;
+            string selectedCategory = _categoryFilterIndex > 0 && _categoryFilterIndex < _categoryOptions.Length ? _categoryOptions[_categoryFilterIndex] : null;
+            var agents = MCPActionHistory.GetDistinctAgents();
+            _agentOptions = new string[agents.Count + 1];
+            _agentOptions[0] = "All Agents";
+            for (int i = 0; i < agents.Count; i++)
+                _agentOptions[i + 1] = agents[i];
+
+            var cats = MCPActionHistory.GetDistinctCategories();
+            _categoryOptions = new string[cats.Count + 1];
+            _categoryOptions[0] = "All Categories";
+            for (int i = 0; i < cats.Count; i++)
+                _categoryOptions[i + 1] = cats[i];
+
+            // Retention can remove earlier options without removing the selected agent/category.
+            _agentFilterIndex = selectedAgent == null ? 0 : Math.Max(0, Array.IndexOf(_agentOptions, selectedAgent));
+            _categoryFilterIndex = selectedCategory == null ? 0 : Math.Max(0, Array.IndexOf(_categoryOptions, selectedCategory));
+        }
+
+        private void RefreshList()
+        {
+            _lastRefreshTime = EditorApplication.timeSinceStartup;
+
+            string agentFilter = _agentFilterIndex > 0 ? _agentOptions[_agentFilterIndex] : null;
+            string catFilter = _categoryFilterIndex > 0 ? _categoryOptions[_categoryFilterIndex] : null;
+            string search = string.IsNullOrWhiteSpace(_searchText) ? null : _searchText;
+
+            _filteredRecords = MCPActionHistory.GetFiltered(agentFilter, catFilter, search);
+
+            // Reverse so newest is first
+            _filteredRecords.Reverse();
+            _selectedIndex = _selectedRecord == null ? -1 : _filteredRecords.IndexOf(_selectedRecord);
+            if (_selectedIndex < 0) _selectedRecord = null;
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        //  Main GUI
+        // ═══════════════════════════════════════════════════════════
+
+        private void OnGUI()
+        {
+            InitStyles();
+
+            DrawToolbar();
+            DrawActionList();
+            DrawResizeHandle();
+            DrawDetailPanel();
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        //  Toolbar
+        // ═══════════════════════════════════════════════════════════
+
+        private void DrawToolbar()
+        {
+            EditorGUILayout.BeginHorizontal(EditorStyles.toolbar);
+
+            if (GUILayout.Button(new GUIContent("MCP \u25BE", "Open the complete MCP menu"), EditorStyles.toolbarDropDown, GUILayout.Width(58)))
+                MCPToolbarElement.ShowMenu(GUILayoutUtility.GetLastRect());
+
+            // Agent filter
+            EditorGUI.BeginChangeCheck();
+            _agentFilterIndex = EditorGUILayout.Popup(_agentFilterIndex, _agentOptions,
+                EditorStyles.toolbarPopup, GUILayout.Width(130));
+            if (EditorGUI.EndChangeCheck()) RefreshList();
+
+            // Category filter
+            EditorGUI.BeginChangeCheck();
+            _categoryFilterIndex = EditorGUILayout.Popup(_categoryFilterIndex, _categoryOptions,
+                EditorStyles.toolbarPopup, GUILayout.Width(120));
+            if (EditorGUI.EndChangeCheck()) RefreshList();
+
+            // Search
+            EditorGUI.BeginChangeCheck();
+            _searchText = EditorGUILayout.TextField(_searchText, EditorStyles.toolbarSearchField);
+            if (EditorGUI.EndChangeCheck()) RefreshList();
+
+            // Count label
+            GUILayout.Label($"{_filteredRecords.Count}/{MCPActionHistory.Count}", _smallLabel,
+                GUILayout.Width(55));
+
+            // Persistence toggle
+            EditorGUI.BeginChangeCheck();
+            bool persist = GUILayout.Toggle(MCPSettingsManager.ActionHistoryPersistence, "Persist",
+                EditorStyles.toolbarButton, GUILayout.Width(50));
+            if (EditorGUI.EndChangeCheck())
+                MCPSettingsManager.ActionHistoryPersistence = persist;
+
+            // Clear button
+            if (GUILayout.Button("Clear", EditorStyles.toolbarButton, GUILayout.Width(40)))
+            {
+                if (EditorUtility.DisplayDialog("Clear History",
+                    "Clear all action history? This cannot be undone.", "Clear", "Cancel"))
+                {
+                    MCPActionHistory.Clear();
+                    _selectedIndex = -1;
+                    _selectedRecord = null;
+                    RefreshList();
+                }
+            }
+
+            EditorGUILayout.EndHorizontal();
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        //  Action List
+        // ═══════════════════════════════════════════════════════════
+
+        private void DrawActionList()
+        {
+            float listHeight = position.height - _detailPanelHeight - 28; // 28 = toolbar
+            if (listHeight < 80) listHeight = 80;
+            Rect viewport = GUILayoutUtility.GetRect(0, position.width, listHeight, listHeight, GUILayout.ExpandWidth(true));
+            float width = Mathf.Max(1, position.width - 18);
+            float contentHeight = _filteredRecords.Count * RowHeight;
+            _listScroll.x = 0;
+            _listScroll.y = Mathf.Clamp(_listScroll.y, 0, Mathf.Max(0, contentHeight - listHeight));
+            _listScroll = GUI.BeginScrollView(viewport, _listScroll, new Rect(0, 0, width, Mathf.Max(listHeight, contentHeight)));
+            try
+            {
+                if (_filteredRecords.Count == 0)
+                    GUI.Label(new Rect(4, 4, width - 8, 40), MCPActionHistory.Count == 0
+                        ? "No actions recorded yet. Perform MCP tool calls to see them here."
+                        : "No actions match the current filters.", EditorStyles.helpBox);
+                else
+                {
+                    // Fixed-height rows retain the full scroll extent while formatting only the visible slice.
+                    int first = Mathf.Max(0, Mathf.FloorToInt(_listScroll.y / RowHeight));
+                    int end = Math.Min(_filteredRecords.Count, first + Mathf.CeilToInt(listHeight / RowHeight) + 1);
+                    for (int i = first; i < end; i++)
+                        DrawActionRow(new Rect(0, i * RowHeight, width, RowHeight), _filteredRecords[i], i);
+                }
+            }
+            finally { GUI.EndScrollView(); }
+        }
+
+        private void DrawActionRow(Rect row, MCPActionRecord record, int index)
+        {
+            if (index == _selectedIndex) EditorGUI.DrawRect(row, new Color(0.24f, 0.48f, 0.9f, 0.3f));
+            else GUI.Box(row, GUIContent.none, index % 2 == 0 ? _rowStyle : _rowAltStyle);
+            var cell = new Rect(row.x + 4, row.y + 2, 18, row.height - 4);
+            Color previous = GUI.color;
+            GUI.color = GetStatusColor(record.DisplayStatus);
+            GUI.Label(cell, new GUIContent("\u25CF", record.DisplayStatus), _dotStyle);
+            GUI.color = previous;
+            cell.x += cell.width; cell.width = 55;
+            GUI.Label(cell, record.Timestamp.ToString("HH:mm:ss"), _smallLabel);
+            cell.x += cell.width; cell.width = 65;
+            GUI.color = ColorBlue; GUI.Label(cell, TruncateAgent(record.AgentId), _smallLabel); GUI.color = previous;
+            cell.x += cell.width; cell.width = 75;
+            GUI.color = GetCategoryColor(record.Category); GUI.Label(cell, record.Category ?? "", _smallLabel); GUI.color = previous;
+            cell.x += cell.width; cell.width = 110;
+            GUI.Label(cell, MCPActionRecord.ExtractCommand(record.ActionName), EditorStyles.miniLabel);
+            cell.x += cell.width; cell.width = Mathf.Max(0, row.xMax - cell.x - 54);
+            if (!string.IsNullOrEmpty(record.TargetPath) && GUI.Button(cell, new GUIContent(TruncateString(record.TargetPath, 30), record.TargetPath), _linkStyle))
+                SelectTargetObject(record);
+            cell.x += cell.width; cell.width = 50;
+            GUI.Label(cell, $"{record.ExecutionTimeMs}ms", _smallLabel);
+            if (Event.current.type == EventType.MouseDown && Event.current.button == 0 && row.Contains(Event.current.mousePosition))
+            {
+                _selectedIndex = index; _selectedRecord = record;
+                bool frame = Event.current.clickCount == 2;
+                Event.current.Use(); Repaint();
+                if (frame) FrameTargetObject(record);
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        //  Resize Handle
+        // ═══════════════════════════════════════════════════════════
+
+        private void DrawResizeHandle()
+        {
+            Rect handleRect = EditorGUILayout.GetControlRect(false, 4);
+            handleRect.x = 0;
+            handleRect.width = position.width;
+
+            EditorGUI.DrawRect(handleRect, new Color(0.3f, 0.3f, 0.3f));
+            EditorGUIUtility.AddCursorRect(handleRect, MouseCursor.ResizeVertical);
+
+            if (Event.current.type == EventType.MouseDown && handleRect.Contains(Event.current.mousePosition))
+            {
+                _isResizingPanel = true;
+                Event.current.Use();
+            }
+
+            if (_isResizingPanel)
+            {
+                if (Event.current.type == EventType.MouseDrag)
+                {
+                    _detailPanelHeight = position.height - Event.current.mousePosition.y - 14;
+                    _detailPanelHeight = Mathf.Clamp(_detailPanelHeight, 60, position.height - 150);
+                    Repaint();
+                    Event.current.Use();
+                }
+                else if (Event.current.type == EventType.MouseUp)
+                {
+                    _isResizingPanel = false;
+                    Event.current.Use();
+                }
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        //  Detail Panel
+        // ═══════════════════════════════════════════════════════════
+
+        private void DrawDetailPanel()
+        {
+            EditorGUILayout.BeginVertical(EditorStyles.helpBox, GUILayout.Height(_detailPanelHeight));
+
+            if (_selectedRecord == null)
+            {
+                EditorGUILayout.LabelField("Select an action above to see details.", EditorStyles.centeredGreyMiniLabel);
+            }
+            else
+            {
+                var r = _selectedRecord;
+
+                // Header row with action buttons
+                EditorGUILayout.BeginHorizontal();
+                EditorGUILayout.LabelField($"{r.ActionName}", EditorStyles.boldLabel);
+                GUILayout.FlexibleSpace();
+
+                // Copy button
+                if (GUILayout.Button("Copy", EditorStyles.miniButton, GUILayout.Width(40)))
+                {
+                    EditorGUIUtility.systemCopyBuffer = r.ToCopyString();
+                    Debug.Log("[MCP History] Action details copied to clipboard.");
+                }
+
+                // Undo button
+                if (r.UndoGroup >= 0)
+                {
+                    if (GUILayout.Button("Undo", EditorStyles.miniButton, GUILayout.Width(40)))
+                    {
+                        var preview = MCPUndoCommands.PreviewRecordedAction(r);
+                        if (preview.TryGetValue("error", out var previewError))
+                            EditorUtility.DisplayDialog("Undo unavailable", previewError.ToString(), "OK");
+                        else if (EditorUtility.DisplayDialog("Undo Action", (string)preview["message"], "Revert changes", "Cancel"))
+                        {
+                            var result = MCPUndoCommands.RevertRecordedAction(r, true, (string)preview["stackRevision"]);
+                            if (result.TryGetValue("error", out var revertError))
+                                EditorUtility.DisplayDialog("Undo unavailable", revertError.ToString(), "OK");
+                            else Debug.Log("[MCP History] " + result["message"]);
+                        }
+                    }
+                }
+
+                // Select button
+                if (!string.IsNullOrEmpty(r.TargetInstanceId))
+                {
+                    if (GUILayout.Button("Select", EditorStyles.miniButton, GUILayout.Width(45)))
+                        SelectTargetObject(r);
+                }
+
+                EditorGUILayout.EndHorizontal();
+
+                _detailScroll = EditorGUILayout.BeginScrollView(_detailScroll);
+
+                // Status & timing
+                Color statusColor = GetStatusColor(r.DisplayStatus);
+                DrawDetailRow("Status", r.DisplayStatus, statusColor);
+                DrawDetailRow("Agent", r.AgentId);
+                DrawDetailRow("Time", r.Timestamp.ToString("yyyy-MM-dd HH:mm:ss"));
+                DrawDetailRow("Duration", $"{r.ExecutionTimeMs}ms");
+                DrawDetailRow("Category", r.Category);
+
+                if (!string.IsNullOrEmpty(r.TargetPath))
+                    DrawDetailRow("Target", r.TargetPath);
+                if (!string.IsNullOrEmpty(r.TargetType))
+                    DrawDetailRow("Target Type", r.TargetType);
+                if (!string.IsNullOrEmpty(r.TargetInstanceId))
+                    DrawDetailRow("Instance ID", r.TargetInstanceId);
+                if (r.UndoGroup >= 0)
+                    DrawDetailRow("Undo Group", r.UndoGroup.ToString());
+
+                // Error message
+                if (!string.IsNullOrEmpty(r.ErrorMessage))
+                {
+                    EditorGUILayout.Space(4);
+                    var prevColor = GUI.color;
+                    GUI.color = ColorRed;
+                    EditorGUILayout.LabelField("Error:", EditorStyles.boldLabel);
+                    GUI.color = prevColor;
+                    EditorGUILayout.LabelField(r.ErrorMessage, _detailLabel);
+                }
+
+                // Parameters
+                if (r.Parameters != null && r.Parameters.Count > 0)
+                {
+                    EditorGUILayout.Space(4);
+                    EditorGUILayout.LabelField("Parameters:", EditorStyles.boldLabel);
+                    foreach (var kvp in r.Parameters)
+                        DrawDetailRow($"  {kvp.Key}", kvp.Value);
+                }
+
+                EditorGUILayout.EndScrollView();
+            }
+
+            EditorGUILayout.EndVertical();
+        }
+
+        // ═══════════════════════════════════════════════════════════
+        //  Helpers
+        // ═══════════════════════════════════════════════════════════
+
+        private void DrawDetailRow(string label, string value, Color? valueColor = null)
+        {
+            EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.LabelField(label, _smallLabel, GUILayout.Width(90));
+            if (valueColor.HasValue)
+            {
+                var prev = GUI.color;
+                GUI.color = valueColor.Value;
+                EditorGUILayout.LabelField(value ?? "", _detailLabel);
+                GUI.color = prev;
+            }
+            else
+            {
+                EditorGUILayout.LabelField(value ?? "", _detailLabel);
+            }
+            EditorGUILayout.EndHorizontal();
+        }
+
+        private void SelectTargetObject(MCPActionRecord record)
+        {
+            if (!string.IsNullOrEmpty(record.TargetInstanceId))
+            {
+                var obj = MCPObjectId.ToObject(record.TargetInstanceId);
+                if (obj != null)
+                {
+                    Selection.activeObject = obj;
+                    EditorGUIUtility.PingObject(obj);
+                    return;
+                }
+            }
+
+            // Fallback: try finding by path
+            if (!string.IsNullOrEmpty(record.TargetPath))
+            {
+                var go = GameObject.Find(record.TargetPath);
+                if (go != null)
+                {
+                    Selection.activeGameObject = go;
+                    EditorGUIUtility.PingObject(go);
+                }
+            }
+        }
+
+        private void FrameTargetObject(MCPActionRecord record)
+        {
+            SelectTargetObject(record);
+            if (Selection.activeGameObject != null)
+                SceneView.FrameLastActiveSceneView();
+        }
+
+        private static Color GetStatusColor(string status)
+        {
+            if (string.IsNullOrEmpty(status)) return ColorGrey;
+            switch (status)
+            {
+                case "Completed": return ColorGreen;
+                case "Failed":    return ColorRed;
+                case "Command error": return ColorRed;
+                case "TimedOut":  return ColorOrange;
+                default:          return ColorYellow;
+            }
+        }
+
+        private static Color GetCategoryColor(string category)
+        {
+            if (string.IsNullOrEmpty(category)) return ColorGrey;
+            // Simple hash-based color for variety
+            int hash = category.GetHashCode();
+            float h = Mathf.Abs(hash % 360) / 360f;
+            return Color.HSVToRGB(h, 0.5f, 0.85f);
+        }
+
+        private static string TruncateAgent(string agentId)
+        {
+            if (string.IsNullOrEmpty(agentId)) return "unknown";
+            return agentId.Length <= 10 ? agentId : agentId.Substring(0, 8) + "..";
+        }
+
+        private static string TruncateString(string s, int maxLen)
+        {
+            if (string.IsNullOrEmpty(s) || s.Length <= maxLen) return s;
+            return ".." + s.Substring(s.Length - maxLen + 2);
+        }
+    }
+}

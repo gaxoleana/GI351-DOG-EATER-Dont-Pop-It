@@ -88,6 +88,7 @@ public class PlayerController : MonoBehaviour
     private bool inputLocked;
 
     public bool IsInputLocked => inputLocked;
+    public bool IsBlowing => isBlowInputHeld && !inputLocked && gum != null && gum.CanBlow();
 
     void Awake()
     {
@@ -181,6 +182,7 @@ public class PlayerController : MonoBehaviour
 
     public void StartRocketBoost(float height = 50f, float duration = 2.5f)
     {
+        FlightRewardPresentation.Flash();
         if (rocketBoostCoroutine != null)
         {
             StopCoroutine(rocketBoostCoroutine);

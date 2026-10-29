@@ -144,8 +144,16 @@ public class GumController : MonoBehaviour
 
     private Transform playerTransform;
     private float startY;
+    private PlayerController owner;
+    private float rewardOrigin;
+    private int highestGrowthStep;
+    [Header("Regular Growth Rewards")]
+    public bool useRegularGrowthRewards = true;
+    [Min(1f)] public float growthRewardMeters = 6000f;
+    [Min(0.01f)] public float growthRewardIncrease = 0.2f;
     private float stateTimer;
     private float shakeTimer;
+    private float ringPulse;
     private bool isForcedRecovery; // true ตอนแตกจาก ForcePop() กันไม่ให้ auto-recovery (popRecoveryTime) มาแย่งรีเซ็ตก่อนเวลา
     private bool isGroundedHidden = false; // true ตอนติดพื้น ใช้ซ่อน gum โดยไม่แย่ง logic ของ Pop/Reset
     private Collider2D gumCollider;
@@ -186,6 +194,10 @@ public class GumController : MonoBehaviour
     {
         playerTransform = playerTf;
         startY = playerTransform.position.y;
+        owner = playerTf.GetComponent<PlayerController>();
+        var progress = FindAnyObjectByType<AltitudeProgressBarUI>();
+        rewardOrigin = progress != null ? progress.startYOffset : startY;
+        highestGrowthStep = 0;
         currentDeadZoneThreshold = baseDeadZoneThreshold;
 
         if (ringRenderer == null && ringVisual != null)
@@ -233,6 +245,12 @@ public class GumController : MonoBehaviour
         }
     }
 
+    void LateUpdate()
+    {
+        RefreshGumVisibility();
+        UpdateDeadZoneRing(GetSizeRatio(), ringPulse);
+    }
+
     public float CurrentMaxVisualScale
     {
         get
@@ -259,13 +277,14 @@ public class GumController : MonoBehaviour
 
         if (gumVisual != null)
         {
-            float targetScale = currentState == GumState.Popped
-                ? minVisualScale
+            float targetScale = currentState == GumState.Popped || currentSize <= 0.0001f
+                ? 0f
                 : Mathf.Lerp(minVisualScale, CurrentMaxVisualScale, sizeRatio) + pulse;
 
             gumVisual.localScale = Vector3.one * targetScale;
         }
 
+        ringPulse = pulse;
         UpdateDeadZoneRing(sizeRatio, pulse);
     }
 
@@ -287,7 +306,8 @@ public class GumController : MonoBehaviour
 
         if (ringRenderer == null) return;
 
-        if (currentState == GumState.Popped || sizeRatio < warningRatioStart)
+        ringRenderer.enabled = owner != null && owner.IsBlowing && currentSize > 0.0001f;
+        if (currentState != GumState.Normal || !ringRenderer.enabled || sizeRatio < warningRatioStart)
         {
             // ยังปลอดภัย หรือเพิ่งแตกไป — วงแหวนไม่ต้องโชว์
             Color hidden = ringWarningColor;
@@ -307,7 +327,7 @@ public class GumController : MonoBehaviour
     private void UpdateDangerShake()
     {
         if (impulseSource == null) return;
-        if (currentState != GumState.Normal) return;
+        if (currentState != GumState.Normal || owner == null || !owner.IsBlowing) return;
 
         float sizeRatio = GetSizeRatio();
         if (sizeRatio < dangerRatioStart) return;
@@ -353,7 +373,9 @@ public class GumController : MonoBehaviour
 
     private void RefreshGumVisibility()
     {
-        bool shouldShow = currentState == GumState.Normal && !isGroundedHidden;
+        bool shouldShow = currentState == GumState.Normal && !isGroundedHidden && currentSize > 0.0001f;
+        if (gumCollider == null) gumCollider = GetComponent<Collider2D>();
+        if (gumCollider != null) gumCollider.enabled = shouldShow;
 
         if (gumSpriteRenderer != null)
         {
@@ -374,6 +396,19 @@ public class GumController : MonoBehaviour
 
     private void UpdateDeadZoneThreshold()
     {
+        if (useRegularGrowthRewards)
+        {
+            float altitudeNow = playerTransform != null ? Mathf.Max(0f, playerTransform.position.y - rewardOrigin) : 0f;
+            int cap = Mathf.Max(0, Mathf.CeilToInt((maxDeadZoneThreshold - baseDeadZoneThreshold) / Mathf.Max(0.01f, growthRewardIncrease) - 0.0001f));
+            int step = Mathf.Min(cap, Mathf.FloorToInt(altitudeNow / Mathf.Max(0.1f, growthRewardMeters / 10f)));
+            if (step > highestGrowthStep)
+            {
+                highestGrowthStep = step;
+                FlightRewardPresentation.Flash();
+            }
+            currentDeadZoneThreshold = Mathf.Min(maxDeadZoneThreshold, baseDeadZoneThreshold + highestGrowthStep * growthRewardIncrease);
+            return;
+        }
         float altitude = GetCurrentAltitude();
         float grown = baseDeadZoneThreshold;
 

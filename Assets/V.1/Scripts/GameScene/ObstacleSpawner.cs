@@ -82,6 +82,7 @@ public class ObstacleSpawner : MonoBehaviour
 
     private float nextSpawnTimer;
     private float nextRocketSpawnTimer;
+    private bool planeGroupActive;
 
     void Start()
     {
@@ -165,32 +166,11 @@ public class ObstacleSpawner : MonoBehaviour
     private IEnumerator SpawnRocketSequence()
     {
         float spawnY = playerTransform.position.y + Random.Range(minOffsetY, maxOffsetY);
-        GameObject warningLine = null;
-
-        if (warningLinePlanePrefab != null)
-        {
-            warningLine = Instantiate(
-                warningLinePlanePrefab,
-                new Vector3(0f, spawnY, 0f),
-                Quaternion.identity);
-
-            SpriteRenderer[] warningRenderers = warningLine.GetComponentsInChildren<SpriteRenderer>(true);
-            for (int i = 0; i < warningRenderers.Length; i++)
-            {
-                Color goldColor = warningRenderers[i].color;
-                goldColor.r = 1f;
-                goldColor.g = 0.75f;
-                goldColor.b = 0.05f;
-                warningRenderers[i].color = goldColor;
-            }
-        }
-
-        yield return new WaitForSeconds(warningDuration);
-
-        if (warningLine != null)
-        {
-            Destroy(warningLine);
-        }
+        // A thought icon announces a collectible, without using a danger lane.
+        float leadTime = Mathf.Max(1f, warningDuration);
+        var icon = rocketPrefab != null ? rocketPrefab.GetComponent<SpriteRenderer>() : null;
+        FlightRewardPresentation.ShowRocketThought(playerTransform, icon != null ? icon.sprite : null, leadTime);
+        yield return new WaitForSeconds(leadTime);
 
         if (rocketPrefab == null || playerTransform == null)
         {
@@ -261,6 +241,10 @@ public class ObstacleSpawner : MonoBehaviour
         // สุ่มระยะ Offset Y จาก minOffsetY ถึง maxOffsetY
         float offsetY = Random.Range(minOffsetY, maxOffsetY);
         bool isBird = selectedPrefab == birdPrefab;
+        // Birds keep their existing schedule. Only a second plane group is blocked.
+        if (!isBird && planeGroupActive) yield break;
+        if (!isBird) planeGroupActive = true;
+        List<GameObject> spawnedPlanes = new List<GameObject>();
 
         int obstacleCount = isBird ? 1 : GetPlaneGroupSize();
 
@@ -332,6 +316,7 @@ public class ObstacleSpawner : MonoBehaviour
                 Vector2 moveDirection = spawnFromRights[i] ? Vector2.left : Vector2.right;
                 Vector3 spawnPos = new Vector3(spawnXs[i], spawnHeights[i], 0f);
                 GameObject obsObj = Instantiate(selectedPrefab, spawnPos, Quaternion.identity);
+                if (!isBird) spawnedPlanes.Add(obsObj);
 
                 Obstacle obs = obsObj.GetComponent<Obstacle>();
                 if (obs != null)
@@ -350,6 +335,12 @@ public class ObstacleSpawner : MonoBehaviour
             {
                 yield return new WaitForSeconds(Mathf.Max(0f, planeWarningDelay));
             }
+        }
+        if (!isBird)
+        {
+            // Keep ownership until every plane from this group has gone.
+            while (spawnedPlanes.Exists(plane => plane != null)) yield return null;
+            planeGroupActive = false;
         }
     }
 

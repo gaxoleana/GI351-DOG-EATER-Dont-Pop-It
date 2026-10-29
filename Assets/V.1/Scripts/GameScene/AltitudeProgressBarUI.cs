@@ -82,7 +82,7 @@ public class AltitudeProgressBarUI : MonoBehaviour
         if (playerTransform == null) return;
 
         // 1. คำนวณความสูงปัจจุบันโดยอิงจากตำแหน่ง Y ของ Player
-        float currentAltitude = Mathf.Max(0f, playerTransform.position.y - startYOffset);
+        float currentAltitude = hasReachedFinishLine ? maxAltitude : Mathf.Clamp(playerTransform.position.y - startYOffset, minAltitude, maxAltitude);
 
         // 2. คำนวณ Ratio ความก้าวหน้า (0.0 ถึง 1.0)
         float progressRatio = Mathf.Clamp01((currentAltitude - minAltitude) / (maxAltitude - minAltitude));
@@ -102,7 +102,7 @@ public class AltitudeProgressBarUI : MonoBehaviour
         }
 
         // 5. อัปเดตข้อความแสดงระยะทาง
-        float currentKm = currentAltitude / 100f;
+        float currentKm = currentAltitude >= maxAltitude ? maxAltitude / 100f : Mathf.Floor(currentAltitude) / 100f;
         if (altitudeText != null)
         {
             float maxKm = maxAltitude / 100f;
