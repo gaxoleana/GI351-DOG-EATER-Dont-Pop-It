@@ -1,0 +1,6 @@
+{
+  "name": "DontPopIt.Editor",
+  "rootNamespace": "DontPopIt.Editor",
+  "includePlatforms": ["Editor"],
+  "autoReferenced": true
+}

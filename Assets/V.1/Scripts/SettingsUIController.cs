@@ -9,19 +9,35 @@ public class SettingsUIController : MonoBehaviour
 
     void OnEnable()
     {
-        // โหลดค่าที่เคยเซฟไว้มาตั้งตำแหน่ง slider ทุกครั้งที่เปิด panel
-        if (AudioManager.Instance == null) return;
-
-        masterSlider.SetValueWithoutNotify(AudioManager.Instance.GetVolume("MasterVolume"));
-        musicSlider.SetValueWithoutNotify(AudioManager.Instance.GetVolume("MusicVolume"));
-        sfxSlider.SetValueWithoutNotify(AudioManager.Instance.GetVolume("SFXVolume"));
+        if (masterSlider != null) masterSlider.onValueChanged.AddListener(OnMasterChanged);
+        if (musicSlider != null) musicSlider.onValueChanged.AddListener(OnMusicChanged);
+        if (sfxSlider != null) sfxSlider.onValueChanged.AddListener(OnSFXChanged);
+        RefreshSliders();
     }
 
     void Start()
     {
-        masterSlider.onValueChanged.AddListener(OnMasterChanged);
-        musicSlider.onValueChanged.AddListener(OnMusicChanged);
-        sfxSlider.onValueChanged.AddListener(OnSFXChanged);
+        // OnEnable may run before AudioManager.Awake on another scene object.
+        RefreshSliders();
+    }
+
+    void OnDisable()
+    {
+        if (masterSlider != null) masterSlider.onValueChanged.RemoveListener(OnMasterChanged);
+        if (musicSlider != null) musicSlider.onValueChanged.RemoveListener(OnMusicChanged);
+        if (sfxSlider != null) sfxSlider.onValueChanged.RemoveListener(OnSFXChanged);
+    }
+
+    private void RefreshSliders()
+    {
+        if (AudioManager.Instance == null) return;
+
+        if (masterSlider != null)
+            masterSlider.SetValueWithoutNotify(AudioManager.Instance.GetVolume("MasterVolume"));
+        if (musicSlider != null)
+            musicSlider.SetValueWithoutNotify(AudioManager.Instance.GetVolume("MusicVolume"));
+        if (sfxSlider != null)
+            sfxSlider.SetValueWithoutNotify(AudioManager.Instance.GetVolume("SFXVolume"));
     }
 
     private void OnMasterChanged(float value) => AudioManager.Instance?.SetMasterVolume(value);

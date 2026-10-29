@@ -3,7 +3,7 @@ using UnityEngine.Audio;
 
 public class AudioManager : MonoBehaviour
 {
-    public static AudioManager Instance;
+    public static AudioManager Instance { get; private set; }
 
     [SerializeField] private AudioSource musicSource;
     [SerializeField] private AudioSource sfxSource;
@@ -12,6 +12,12 @@ public class AudioManager : MonoBehaviour
     private const string MASTER_KEY = "MasterVolume";
     private const string MUSIC_KEY = "MusicVolume";
     private const string SFX_KEY = "SFXVolume";
+
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    private static void ResetInstance()
+    {
+        Instance = null;
+    }
 
     void Awake()
     {
@@ -25,8 +31,19 @@ public class AudioManager : MonoBehaviour
             Destroy(gameObject);
             return;
         }
+    }
 
-        LoadVolumeSettings();
+    void Start()
+    {
+        // AudioMixer parameters are not ready during Awake.
+        if (Instance == this)
+            LoadVolumeSettings();
+    }
+
+    void OnDestroy()
+    {
+        if (Instance == this)
+            Instance = null;
     }
 
     // ---------- Playback (เดิม + null guard) ----------
@@ -64,30 +81,32 @@ public class AudioManager : MonoBehaviour
 
     private void SetMixerVolume(string parameterName, float value)
     {
+        float clamped = Mathf.Clamp01(value);
+        ApplyMixerVolume(parameterName, clamped);
+        PlayerPrefs.SetFloat(parameterName, clamped);
+        PlayerPrefs.Save();
+    }
+
+    private void ApplyMixerVolume(string parameterName, float value)
+    {
         if (mixer == null) return;
 
-        // value: 0.0001 - 1 (linear) -> dB (log)
-        float clamped = Mathf.Clamp(value, 0.0001f, 1f);
-        float dB = Mathf.Log10(clamped) * 20f;
-
+        // Zero on the slider maps to the mixer's silence floor (-80 dB).
+        float dB = Mathf.Log10(Mathf.Clamp(value, 0.0001f, 1f)) * 20f;
         mixer.SetFloat(parameterName, dB);
-        PlayerPrefs.SetFloat(parameterName, value);
-        PlayerPrefs.Save();
     }
 
     private void LoadVolumeSettings()
     {
-        if (mixer == null) return;
-
-        SetMixerVolume(MASTER_KEY, PlayerPrefs.GetFloat(MASTER_KEY, 1f));
-        SetMixerVolume(MUSIC_KEY, PlayerPrefs.GetFloat(MUSIC_KEY, 1f));
-        SetMixerVolume(SFX_KEY, PlayerPrefs.GetFloat(SFX_KEY, 1f));
+        ApplyMixerVolume(MASTER_KEY, GetVolume(MASTER_KEY));
+        ApplyMixerVolume(MUSIC_KEY, GetVolume(MUSIC_KEY));
+        ApplyMixerVolume(SFX_KEY, GetVolume(SFX_KEY));
     }
 
     // ---------- ให้ UI slider ดึงค่าปัจจุบันไปตั้งตอนเปิดหน้า Settings ----------
 
     public float GetVolume(string parameterName)
     {
-        return PlayerPrefs.GetFloat(parameterName, 1f);
+        return Mathf.Clamp01(PlayerPrefs.GetFloat(parameterName, 1f));
     }
 }
