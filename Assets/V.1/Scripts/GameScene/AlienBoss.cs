@@ -35,19 +35,16 @@ public class AlienBoss : MonoBehaviour
     public float maxLaserInterval = 4f;
 
     [Tooltip("Phase 1: ระยะเวลาที่เส้นเตือนไล่ตามผู้เล่น real-time (วินาที)")]
-    public float laserTrackDuration = 0.5f;
+    public float laserTrackDuration = 1.0f;
 
     [Tooltip("Phase 2: หลังจบ track แล้วเส้นเตือนจะหยุดนิ่งล็อกตำแหน่งไว้กี่วินาที ก่อนเลเซอร์ยิง")]
-    public float laserHoldDuration = 0.3f;
+    public float laserHoldDuration = 0.8f;
 
     [Tooltip("ระยะเวลาที่เลเซอร์ (collider จริง) ค้างอยู่บนจอก่อนจะ หายไป (วินาที) — ขยายเวลาเพิ่มขึ้นตรงนี้")]
     public float laserActiveDuration = 0.8f;
 
     [Tooltip("จำนวนเลเซอร์ที่ยิงติดกันในช่วงอันติ")]
     public int ultimateLaserCount = 3;
-
-    [Tooltip("ระยะสุ่มแนวยิงเหนือ/ใต้ตำแหน่ง Alien ตอนเริ่มยิงสามนัด")]
-    public float ultimateSpreadY = 2f;
 
     [Tooltip("เวลาที่ Alien ใช้เล็งระดับใหม่ของแต่ละนัดในช่วงอันติ")]
     public float ultimateTrackDuration = 0.2f;
@@ -370,26 +367,27 @@ public class AlienBoss : MonoBehaviour
         isAttacking = true;
 
         float fixedX = fixedRightX;
-        // Keep the burst local to the Alien's initial position, without tracking the player.
-        float burstCenterY = transform.position.y;
         for (int shot = 0; shot < ultimateLaserCount; shot++)
         {
             while (PanicObstacleRules.EventRunning) yield return null;
-            float spread = Mathf.Max(0f, ultimateSpreadY);
-            float targetY = burstCenterY + Random.Range(-spread, spread);
+            float attackOffsetY = Random.Range(minAttackOffsetY, maxAttackOffsetY);
+            float targetY = playerTransform.position.y + attackOffsetY;
             float startY = transform.position.y;
+            float trackedY = startY;
             float timer = 0f;
 
+            // Restore main's per-shot aim and locked hold before each beam.
             while (timer < ultimateTrackDuration)
             {
                 timer += Time.deltaTime;
-                float progress = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(timer / Mathf.Max(0.01f, ultimateTrackDuration)));
-                float trackedY = Mathf.Lerp(startY, targetY, progress);
+                float progress = Mathf.Clamp01(timer / Mathf.Max(0.01f, ultimateTrackDuration));
+                trackedY = Mathf.Lerp(startY, targetY, progress);
                 transform.position = new Vector3(fixedX, trackedY, transform.position.z);
                 yield return null;
             }
 
             transform.position = new Vector3(fixedX, targetY, transform.position.z);
+            yield return new WaitForSeconds(ultimateHoldDuration);
             while (PanicObstacleRules.EventRunning) yield return null;
             FreezeLaserBeam(fixedX, targetY);
 

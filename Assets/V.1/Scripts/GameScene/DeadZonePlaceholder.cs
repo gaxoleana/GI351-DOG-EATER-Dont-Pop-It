@@ -16,8 +16,9 @@ public class DeadZonePlaceholder : MonoBehaviour
     private LineRenderer contrastLine;
     private PlayerController player;
     private float currentAlpha;
-    public float hideDelay = 0.2f;
-    public float fadeDuration = 0.35f;
+    private float noBlowTimer;
+    [Min(0f)] public float hideDelay = 0.2f;
+    [Min(0f)] public float fadeDuration = 0.35f;
 
     void Awake()
     {
@@ -29,7 +30,8 @@ public class DeadZonePlaceholder : MonoBehaviour
         line.loop = true;
         line.positionCount = segments;
         line.widthMultiplier = lineWidth;
-        currentAlpha = placeholderColor.a;
+        currentAlpha = 0f;
+        line.enabled = false;
         ApplyAlpha();
 
         if (line.sharedMaterial == null)
@@ -49,6 +51,7 @@ public class DeadZonePlaceholder : MonoBehaviour
         contrastLine.sortingOrder = line.sortingOrder - 1;
         contrastLine.startColor = contrastLine.endColor = new Color(0.04f, 0.12f, 0.2f, 0.85f);
         contrastLine.enabled = false;
+        ApplyAlpha();
     }
 
     void Start()
@@ -61,18 +64,43 @@ public class DeadZonePlaceholder : MonoBehaviour
 
     void LateUpdate()
     {
-        bool visible = player != null && player.IsBlowing && gum != null && gum.CanBlow() && gum.currentSize > 0.0001f;
+        bool blowing = player != null && player.IsBlowing && gum != null && gum.CanBlow() && gum.currentSize > 0.0001f;
+        UpdateVisibility(blowing, Time.deltaTime);
+        if (line.enabled) DrawCircle();
+    }
+
+    private void UpdateVisibility(bool blowing, float deltaTime)
+    {
+        float targetAlpha = currentAlpha;
+        if (blowing)
+        {
+            noBlowTimer = 0f;
+            targetAlpha = placeholderColor.a;
+        }
+        else
+        {
+            // Keep the ring steady through brief gaps between presses.
+            float previousTimer = noBlowTimer;
+            noBlowTimer += deltaTime;
+            deltaTime = Mathf.Max(0f, noBlowTimer - hideDelay) - Mathf.Max(0f, previousTimer - hideDelay);
+            if (noBlowTimer >= hideDelay) targetAlpha = 0f;
+        }
+
+        currentAlpha = fadeDuration <= 0f ? targetAlpha :
+            Mathf.MoveTowards(currentAlpha, targetAlpha, placeholderColor.a / fadeDuration * deltaTime);
+        bool visible = currentAlpha > 0f;
         line.enabled = visible;
         contrastLine.enabled = visible;
-        currentAlpha = visible ? placeholderColor.a : 0f;
         ApplyAlpha();
-        if (visible) DrawCircle();
     }
 
     void OnDisable()
     {
+        currentAlpha = 0f;
+        noBlowTimer = 0f;
         if (line != null) line.enabled = false;
         if (contrastLine != null) contrastLine.enabled = false;
+        if (line != null) ApplyAlpha();
     }
 
     private void DrawCircle()
@@ -93,7 +121,6 @@ public class DeadZonePlaceholder : MonoBehaviour
         }
 
         line.widthMultiplier = lineWidth;
-        ApplyAlpha();
     }
 
     private void ApplyAlpha()
@@ -102,5 +129,12 @@ public class DeadZonePlaceholder : MonoBehaviour
         color.a = currentAlpha;
         line.startColor = color;
         line.endColor = color;
+        if (contrastLine != null)
+        {
+            float opacity = placeholderColor.a > 0f ? currentAlpha / placeholderColor.a : 0f;
+            Color rimColor = new Color(0.04f, 0.12f, 0.2f, 0.85f * opacity);
+            contrastLine.startColor = contrastLine.endColor = rimColor;
+        }
     }
+
 }

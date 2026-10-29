@@ -294,13 +294,33 @@ public class ObstacleSpawner : MonoBehaviour
             }
 
             GameObject caution = null;
+            GameObject cautionPrefab = spawnFromRights[i] ? cautionRightPrefab : cautionLeftPrefab;
+            if (cautionPrefab != null)
+            {
+                float cautionX = spawnFromRights[i] ? cautionXRight : cautionXLeft;
+                caution = Instantiate(
+                    cautionPrefab,
+                    new Vector3(cautionX, spawnHeights[i], 0f),
+                    Quaternion.identity,
+                    transform);
+                caution.SetActive(false);
+            }
             HazardWarningCue.Attach(warningLine, spawnFromRights[i]);
 
             // รอให้ Warning ของลำนี้ทำงานจนครบเวลา ก่อน Spawn ลำเดียวกัน
             float timer = 0f;
+            float blinkTimer = 0f;
+            bool cautionVisible = false;
             while (timer < warningDuration)
             {
                 timer += Time.deltaTime;
+                blinkTimer += Time.deltaTime;
+                if (caution != null && blinkTimer >= cautionBlinkInterval)
+                {
+                    blinkTimer = 0f;
+                    cautionVisible = !cautionVisible;
+                    caution.SetActive(cautionVisible);
+                }
                 yield return null;
             }
 

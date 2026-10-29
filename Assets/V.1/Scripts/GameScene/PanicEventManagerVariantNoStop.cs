@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using System.Collections;
+using System.Collections.Generic;
 using Unity.Cinemachine; // Cinemachine 3.x Namespace
 
 /// <summary>
@@ -364,24 +365,77 @@ public class PanicEventManagerVariantNoStop : MonoBehaviour
         StartActiveEvent();
     }
 
-    private static void FitEventLabel(TextMeshProUGUI label, Image bar)
+    private readonly List<Sprite> eventHudSprites = new List<Sprite>();
+
+    private void StyleEventBar(Image bar)
+    {
+        if (bar == null || bar.sprite == null) return;
+        Image frame = bar.transform.parent.GetComponent<Image>();
+        if (frame == null || frame.sprite == null) return;
+
+        // Slice the existing frame so its stroke stays even on every side.
+        // Runtime sprites share the original textures; imported artwork stays untouched.
+        Sprite frameSource = frame.sprite;
+        Rect frameRect = frameSource.rect;
+        Sprite frameSprite = Sprite.Create(frameSource.texture, frameRect, Vector2.one * 0.5f,
+            frameSource.pixelsPerUnit, 0, SpriteMeshType.FullRect, new Vector4(32f, 32f, 32f, 32f));
+        eventHudSprites.Add(frameSprite);
+        frame.sprite = frameSprite;
+        frame.type = Image.Type.Sliced;
+        frame.pixelsPerUnitMultiplier = frameRect.height / frame.rectTransform.rect.height * 2.5f;
+
+        // The full button artwork has its own thick frame. Use only its glossy
+        // interior for the fill, leaving the single outer frame visible.
+        Sprite fillSource = bar.sprite;
+        Rect fillRect = fillSource.rect;
+        fillRect = new Rect(fillRect.x + 32f, fillRect.y + 8f, fillRect.width - 64f, fillRect.height - 16f);
+        Sprite fillSprite = Sprite.Create(fillSource.texture, fillRect, Vector2.one * 0.5f,
+            fillSource.pixelsPerUnit, 0, SpriteMeshType.FullRect);
+        eventHudSprites.Add(fillSprite);
+        bar.sprite = fillSprite;
+
+        float inset = frame.rectTransform.rect.height * 0.055f;
+        bar.rectTransform.localScale = Vector3.one;
+        bar.rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, frame.rectTransform.rect.width - inset * 2f);
+        bar.rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, frame.rectTransform.rect.height - inset * 2f);
+    }
+
+    private static void CenterEventLabel(TextMeshProUGUI label, Image bar)
     {
         if (label == null || bar == null) return;
-        label.rectTransform.SetParent(bar.transform, false);
-        label.rectTransform.anchorMin = Vector2.zero; label.rectTransform.anchorMax = Vector2.one;
-        label.rectTransform.localScale = Vector3.one;
-        float padding = bar.rectTransform.rect.width * 0.04f;
-        label.rectTransform.offsetMin = new Vector2(padding, 0f); label.rectTransform.offsetMax = new Vector2(-padding, 0f);
+        RectTransform labelRect = label.rectTransform;
+        RectTransform barRect = bar.rectTransform;
+        // Keep the authored uniform text scale and font material from the old HUD.
+        // A sibling label avoids inheriting the fill's non-uniform scale or clipping.
+        labelRect.SetParent(barRect.parent, false);
+        labelRect.anchorMin = barRect.anchorMin;
+        labelRect.anchorMax = barRect.anchorMax;
+        labelRect.pivot = barRect.pivot;
+        labelRect.anchoredPosition = barRect.anchoredPosition;
+        labelRect.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal,
+            barRect.rect.width * Mathf.Abs(barRect.localScale.x / labelRect.localScale.x));
+        labelRect.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical,
+            barRect.rect.height * Mathf.Abs(barRect.localScale.y / labelRect.localScale.y));
+        labelRect.SetAsLastSibling();
         label.alignment = TextAlignmentOptions.Center;
-        label.enableAutoSizing = true; label.fontSizeMin = Mathf.Max(1f, bar.rectTransform.rect.height * 0.35f); label.fontSizeMax = Mathf.Max(1f, bar.rectTransform.rect.height * 0.72f);
-        label.color = Color.white; label.outlineColor = new Color(0.06f, 0.08f, 0.14f); label.outlineWidth = 0.18f;
+        label.enableAutoSizing = false;
+        label.textWrappingMode = TextWrappingModes.NoWrap;
+        label.overflowMode = TextOverflowModes.Overflow;
         label.raycastTarget = false;
+    }
+
+    void OnDestroy()
+    {
+        foreach (Sprite sprite in eventHudSprites)
+            if (sprite != null) Destroy(sprite);
     }
 
     void Start()
     {
-        FitEventLabel(redCountText, redProgressBar);
-        FitEventLabel(blueTimerText, blueProgressBar);
+        StyleEventBar(redProgressBar);
+        StyleEventBar(blueProgressBar);
+        CenterEventLabel(redCountText, redProgressBar);
+        CenterEventLabel(blueTimerText, blueProgressBar);
         if (player == null) player = FindAnyObjectByType<PlayerController>();
         if (gum == null) gum = FindAnyObjectByType<GumController>();
         if (panicVignetteController == null) panicVignetteController = FindAnyObjectByType<PanicVignetteController>();
@@ -780,4 +834,5 @@ public class PanicEventManagerVariantNoStop : MonoBehaviour
         if (redUIContainer != null) redUIContainer.SetActive(false);
         if (blueUIContainer != null) blueUIContainer.SetActive(false);
     }
+
 }

@@ -1,9 +1,10 @@
 using UnityEngine;
 
-// An edge arrow preserves the true lane while keeping its direction visible off-screen.
+// An off-screen edge arrow points toward the warning lane in its own color.
 public class HazardWarningCue : MonoBehaviour
 {
     private LineRenderer arrow;
+    private SpriteRenderer warningRenderer;
     private Material material;
     private bool fromRight;
     public static void Attach(GameObject warning, bool fromRight)
@@ -13,11 +14,12 @@ public class HazardWarningCue : MonoBehaviour
     }
     void Start()
     {
+        warningRenderer = GetComponentInChildren<SpriteRenderer>(true);
         var child = new GameObject("Hazard Edge Hint"); child.transform.SetParent(transform, false);
         arrow = child.AddComponent<LineRenderer>(); arrow.useWorldSpace = true;
         material = new Material(Shader.Find("Sprites/Default")); arrow.sharedMaterial = material;
         arrow.positionCount = 3; arrow.sortingOrder = 100;
-        arrow.startColor = arrow.endColor = new Color(1f, 0.72f, 0.3f, 0.9f);
+        arrow.enabled = false;
     }
     void LateUpdate()
     {
@@ -25,10 +27,14 @@ public class HazardWarningCue : MonoBehaviour
         var viewport = cam.WorldToViewportPoint(transform.position);
         viewport.x = fromRight ? 0.92f : 0.08f;
         bool above = viewport.y > 0.88f, below = viewport.y < 0.12f;
+        // On-screen direction uses main's original blinking Caution prefab.
+        arrow.enabled = above || below;
+        if (!arrow.enabled) return;
+        arrow.startColor = arrow.endColor = warningRenderer != null ? warningRenderer.color : Color.white;
         viewport.y = Mathf.Clamp(viewport.y, 0.12f, 0.88f);
         var center = cam.ViewportToWorldPoint(viewport); center.z = 0;
         float length = cam.orthographicSize * 0.045f;
-        Vector3 direction = above ? Vector3.up : below ? Vector3.down : (fromRight ? Vector3.left : Vector3.right);
+        Vector3 direction = above ? Vector3.up : Vector3.down;
         Vector3 side = new Vector3(-direction.y, direction.x, 0);
         arrow.widthMultiplier = cam.orthographicSize * 0.009f;
         arrow.SetPosition(0, center - direction * length + side * length * 0.65f);
