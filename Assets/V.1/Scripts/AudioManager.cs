@@ -45,6 +45,25 @@ public class AudioManager : MonoBehaviour
         musicSource.Play();
     }
 
+    public void StopMusic()
+    {
+        if (musicSource == null) return;
+        musicSource.Stop();
+        musicSource.clip = null;
+    }
+
+    public void PauseMusic()
+    {
+        if (musicSource == null) return;
+        musicSource.Pause();
+    }
+
+    public void ResumeMusic()
+    {
+        if (musicSource == null) return;
+        musicSource.UnPause();
+    }
+
     // ---------- Volume control ----------
 
     public void SetMasterVolume(float value)

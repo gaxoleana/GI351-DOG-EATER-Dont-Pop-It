@@ -450,6 +450,11 @@ MonoBehaviour:
   speed: 24
   moveDirection: {x: 1, y: 0}
   lifeTime: 5
+  emitsSmoke: 0
+  smokeDurationRange: {x: 2, y: 3}
+  smokeLiftMultiplier: 0.08
+  smokePrefab: {fileID: 0}
+  smokeSpawnInterval: 0.5
 --- !u!82 &187678463181803845
 AudioSource:
   m_ObjectHideFlags: 0
@@ -463,7 +468,7 @@ AudioSource:
   m_audioClip: {fileID: 0}
   m_Resource: {fileID: 8300000, guid: 9f0552e45dcdba2488a99c3a7ca90b5a, type: 3}
   m_PlayOnAwake: 1
-  m_Volume: 0.5
+  m_Volume: 0.3
   m_Pitch: 1
   Loop: 0
   Mute: 0

@@ -82,6 +82,7 @@ public class ObstacleSpawner : MonoBehaviour
 
     private float nextSpawnTimer;
     private float nextRocketSpawnTimer;
+    private AudioSource sceneMusicSource;
 
     void Start()
     {
@@ -92,6 +93,12 @@ public class ObstacleSpawner : MonoBehaviour
         }
 
         if (gum == null) gum = FindAnyObjectByType<GumController>();
+
+        GameObject backgroundMusic = GameObject.Find("BackgroundMusic");
+        if (backgroundMusic != null)
+        {
+            sceneMusicSource = backgroundMusic.GetComponent<AudioSource>();
+        }
 
         ResetSpawnTimer();
         ResetRocketSpawnTimer();
@@ -111,6 +118,8 @@ public class ObstacleSpawner : MonoBehaviour
             {
                 isBossPhase = true;
                 Debug.Log("⚠️ เข้าสู่พื้นที่ Alien Boss Fight (2000m+)");
+                AudioManager.Instance?.PauseMusic();
+                sceneMusicSource?.Pause();
                 SpawnAlienBoss();
             }
             return;
@@ -132,6 +141,8 @@ public class ObstacleSpawner : MonoBehaviour
         if (isBossPhase)
         {
             isBossPhase = false;
+            AudioManager.Instance?.ResumeMusic();
+            sceneMusicSource?.UnPause();
         }
 
         // 2. ลูปสปอว์นอุปสรรคปกติ (เริ่มทำงานตั้งแต่ 100m ขึ้นไป)
