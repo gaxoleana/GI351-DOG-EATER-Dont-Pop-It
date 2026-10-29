@@ -148,6 +148,119 @@ public class PanicEventManagerVariantNoStop : MonoBehaviour
     private float blueSlowScale;
     [Range(0.1f, 1f)] public float blueWorldSpeed = 0.3f;
 
+    public bool AlienBrainwaveActive { get; private set; }
+    private float brainRemaining, brainPhaseRemaining, brainPhaseDuration;
+    private bool brainInputBefore;
+    private Image brainPortrait;
+    private Image brainScreenTint;
+
+    public bool TryStartAlienBrainwave(float duration, Sprite portrait, bool flipX)
+    {
+        if (!isActiveAndEnabled || currentState != EventState.Idle || player == null ||
+            gum == null || gum.currentState != GumController.GumState.Normal || Time.timeScale <= 0f) return false;
+        brainInputBefore = player.IsInputLocked;
+        AlienBrainwaveActive = true;
+        brainRemaining = Mathf.Clamp(duration, 1f, 2.5f);
+        HideAllUI();
+        if (portrait != null && warningRectTransform != null)
+        {
+            var tintObject = new GameObject("Alien Brainwave Screen Tint", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+            brainScreenTint = tintObject.GetComponent<Image>();
+            brainScreenTint.rectTransform.SetParent(warningRectTransform.parent, false);
+            brainScreenTint.rectTransform.anchorMin = Vector2.zero;
+            brainScreenTint.rectTransform.anchorMax = Vector2.one;
+            brainScreenTint.rectTransform.offsetMin = brainScreenTint.rectTransform.offsetMax = Vector2.zero;
+            brainScreenTint.raycastTarget = false;
+            var go = new GameObject("Alien Brainwave Portrait", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+            brainPortrait = go.GetComponent<Image>();
+            brainPortrait.rectTransform.SetParent(warningRectTransform.parent, false);
+            brainPortrait.rectTransform.anchorMin = brainPortrait.rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
+            brainPortrait.rectTransform.sizeDelta = new Vector2(320f, 320f);
+            brainPortrait.rectTransform.localScale = new Vector3(flipX ? -1f : 1f, 1f, 1f);
+            brainPortrait.sprite = portrait;
+            brainPortrait.preserveAspect = true;
+            brainPortrait.raycastTarget = false;
+        }
+        SetBrainPhase(Random.value < 0.5f ? EventType.Red_Mash : EventType.Blue_HoldOff);
+        return true;
+    }
+
+    private void ReleaseBrainBlue()
+    {
+        RestoreBlueClock();
+        if (blueOwnsPlayer && blueBody != null) blueBody.gravityScale = blueGravityBefore;
+        blueOwnsPlayer = false;
+        blueBody = null;
+    }
+
+    private void SetBrainPhase(EventType type)
+    {
+        ReleaseBrainBlue();
+        currentState = EventState.Active;
+        currentEvent = type;
+        currentMashes = 0;
+        targetMashes = 1;
+        // Every phase has enough time for a response; the last phase is never truncated.
+        brainPhaseDuration = brainRemaining <= 0.75f ? brainRemaining : Random.Range(0.4f, Mathf.Min(0.65f, brainRemaining - 0.4f));
+        brainPhaseRemaining = brainPhaseDuration;
+        stateTimer = brainPhaseDuration;
+        currentBlueDuration = brainPhaseDuration;
+        if (type == EventType.Blue_HoldOff) PrepareBluePlayer();
+        else player.SetInputLocked(true);
+        if (redUIContainer != null) redUIContainer.SetActive(type == EventType.Red_Mash);
+        if (blueUIContainer != null) blueUIContainer.SetActive(type == EventType.Blue_HoldOff);
+        if (type == EventType.Blue_HoldOff)
+        {
+            if (blueTimerText != null) { blueTimerText.gameObject.SetActive(true); blueTimerText.enabled = true; }
+            if (blueProgressBar != null) { blueProgressBar.gameObject.SetActive(true); blueProgressBar.enabled = true; blueProgressBar.fillAmount = 0f; }
+        }
+        if (panicVignetteController != null)
+        {
+            panicVignetteController.SetVignetteColor(type == EventType.Red_Mash ? Color.red : new Color(0.2f, 0.55f, 1f));
+            panicVignetteController.SetVignetteActive(true);
+        }
+        if (brainScreenTint != null) brainScreenTint.color = type == EventType.Red_Mash
+            ? new Color(1f, 0.08f, 0.14f, 0.14f) : new Color(0.08f, 0.45f, 1f, 0.14f);
+        TriggerContinuousShake(type == EventType.Red_Mash ? activeShakeAmplitude : activeShakeAmplitude * 0.12f);
+        UpdateRedUI();
+    }
+
+    private void UpdateBrainwave()
+    {
+        if (Time.timeScale <= 0f) return;
+        float dt = Time.unscaledDeltaTime;
+        brainRemaining = Mathf.Max(0f, brainRemaining - dt);
+        brainPhaseRemaining = Mathf.Max(0f, brainPhaseRemaining - dt);
+        stateTimer = brainPhaseRemaining;
+        if (brainPortrait != null)
+        {
+            brainPortrait.rectTransform.anchoredPosition = new Vector2(Mathf.Sin(Time.unscaledTime * 45f) * 5f, 180f);
+            brainPortrait.color = Color.Lerp(Color.white, new Color(0.65f, 1f, 0.65f), 0.35f);
+        }
+        if (currentEvent == EventType.Red_Mash)
+        {
+            if (Input.GetMouseButtonDown(0) || Input.GetKeyDown(KeyCode.Space))
+            {
+                currentMashes++;
+                gum.AddSize(sizePerMash);
+                player.ApplyMashImpulse(mashLiftImpulse);
+                AddShakePulse(mashShakePulse);
+            }
+            UpdateRedUI();
+        }
+        else
+        {
+            if (blueTimerText != null) blueTimerText.text = $"{stateTimer:0.0}s";
+            if (blueProgressBar != null) blueProgressBar.fillAmount = 1f - stateTimer / brainPhaseDuration;
+            SubmitBlueInput(Input.GetMouseButton(0) || Input.GetKey(KeyCode.Space));
+            if (!AlienBrainwaveActive) return;
+        }
+        if (brainPhaseRemaining > 0f) return;
+        if (currentEvent == EventType.Red_Mash && currentMashes < targetMashes) { FailEvent(); return; }
+        if (brainRemaining <= 0.001f) { EndEvent(true); return; }
+        SetBrainPhase(currentEvent == EventType.Red_Mash ? EventType.Blue_HoldOff : EventType.Red_Mash);
+    }
+
     private void BeginBlueSlowMotion()
     {
         if (blueOwnsClock || Time.timeScale <= 0f) return;
@@ -292,7 +405,7 @@ public class PanicEventManagerVariantNoStop : MonoBehaviour
 
     void OnDisable()
     {
-        if (currentEvent == EventType.Blue_HoldOff || blueOwnsPlayer)
+        if (AlienBrainwaveActive || currentEvent == EventType.Blue_HoldOff || blueOwnsPlayer)
             EndEvent(false);
         else
             Time.timeScale = 1f;
@@ -478,6 +591,7 @@ public class PanicEventManagerVariantNoStop : MonoBehaviour
 
     private void UpdateActiveState()
     {
+        if (AlienBrainwaveActive) { UpdateBrainwave(); return; }
         if (currentEvent == EventType.Red_Mash)
         {
             UpdateRedEvent();
@@ -566,6 +680,12 @@ public class PanicEventManagerVariantNoStop : MonoBehaviour
 
     private void EndEvent(bool success)
     {
+        bool endingBrain = AlienBrainwaveActive;
+        AlienBrainwaveActive = false;
+        if (brainPortrait != null) Destroy(brainPortrait.gameObject);
+        brainPortrait = null;
+        if (brainScreenTint != null) Destroy(brainScreenTint.gameObject);
+        brainScreenTint = null;
         bool endingBlue = currentEvent == EventType.Blue_HoldOff || blueOwnsPlayer;
         if (endingBlue) RestoreBlueClock();
         else Time.timeScale = 1f;
@@ -595,6 +715,7 @@ public class PanicEventManagerVariantNoStop : MonoBehaviour
         if (blueOwnsPlayer && blueBody != null) blueBody.gravityScale = blueGravityBefore;
         blueOwnsPlayer = false;
         blueBody = null;
+        if (endingBrain && player != null) player.SetInputLocked(brainInputBefore);
         if (panicVignetteController != null) panicVignetteController.SetVignetteActive(false);
 
         StopCameraShake();

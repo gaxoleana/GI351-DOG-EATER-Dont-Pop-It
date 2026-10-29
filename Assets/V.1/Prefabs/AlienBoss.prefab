@@ -155,8 +155,8 @@ MonoBehaviour:
   laserBeamPrefab: {fileID: 2302995995081588937, guid: 5796085258d73b746bf0da79fe3bcf41, type: 3}
   minLaserInterval: 3
   maxLaserInterval: 5
-  laserTrackDuration: 1
-  laserHoldDuration: 0.5
+  laserTrackDuration: 0.5
+  laserHoldDuration: 0.3
   laserActiveDuration: 0.5
   ultimateLaserCount: 3
   ultimateTrackDuration: 0.2

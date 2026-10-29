@@ -35,16 +35,19 @@ public class AlienBoss : MonoBehaviour
     public float maxLaserInterval = 4f;
 
     [Tooltip("Phase 1: ระยะเวลาที่เส้นเตือนไล่ตามผู้เล่น real-time (วินาที)")]
-    public float laserTrackDuration = 1.0f;
+    public float laserTrackDuration = 0.5f;
 
     [Tooltip("Phase 2: หลังจบ track แล้วเส้นเตือนจะหยุดนิ่งล็อกตำแหน่งไว้กี่วินาที ก่อนเลเซอร์ยิง")]
-    public float laserHoldDuration = 0.8f;
+    public float laserHoldDuration = 0.3f;
 
     [Tooltip("ระยะเวลาที่เลเซอร์ (collider จริง) ค้างอยู่บนจอก่อนจะ หายไป (วินาที) — ขยายเวลาเพิ่มขึ้นตรงนี้")]
     public float laserActiveDuration = 0.8f;
 
     [Tooltip("จำนวนเลเซอร์ที่ยิงติดกันในช่วงอันติ")]
     public int ultimateLaserCount = 3;
+
+    [Tooltip("ระยะสุ่มแนวยิงเหนือ/ใต้ตำแหน่ง Alien ตอนเริ่มยิงสามนัด")]
+    public float ultimateSpreadY = 2f;
 
     [Tooltip("เวลาที่ Alien ใช้เล็งระดับใหม่ของแต่ละนัดในช่วงอันติ")]
     public float ultimateTrackDuration = 0.2f;
@@ -77,6 +80,100 @@ public class AlienBoss : MonoBehaviour
     [Tooltip("ความสูงต่ำสุดของ Player ก่อน Alien จะถูกทำลาย โดย 100 world units = 1 km")]
     public float despawnAltitude = 2000f;
 
+    [Header("Brainwave")]
+    public float minBrainwaveDuration = 1f;
+    public float maxBrainwaveDuration = 2.5f;
+    public float minBrainwaveCooldown = 12f;
+    public float maxBrainwaveCooldown = 24f;
+    private float brainwaveCooldown;
+    private PanicEventManagerVariantNoStop brainwaveManager;
+    private SpriteRenderer alienRenderer, angryRenderer;
+    private Sprite redAngrySprite, greenAngrySprite;
+    private Texture2D greenAngryTexture;
+    private bool brainwaveCasting;
+    private readonly System.Collections.Generic.List<GameObject> activeLaserBeams = new System.Collections.Generic.List<GameObject>();
+    private bool BrainwaveBlocksAttacks => brainwaveCasting ||
+        (brainwaveManager != null && brainwaveManager.AlienBrainwaveActive);
+
+    private void PrepareBrainwaveVisual()
+    {
+        alienRenderer = GetComponent<SpriteRenderer>();
+        if (angryWarningTransform == null) return;
+        angryRenderer = angryWarningTransform.GetComponentInChildren<SpriteRenderer>(true);
+        if (angryRenderer == null || angryRenderer.sprite == null) return;
+        redAngrySprite = angryRenderer.sprite;
+        var source = redAngrySprite.texture;
+        var rt = RenderTexture.GetTemporary(source.width, source.height, 0, RenderTextureFormat.ARGB32);
+        var previous = RenderTexture.active;
+        try
+        {
+            Graphics.Blit(source, rt);
+            RenderTexture.active = rt;
+            greenAngryTexture = new Texture2D(source.width, source.height, TextureFormat.RGBA32, false);
+            greenAngryTexture.ReadPixels(new Rect(0, 0, source.width, source.height), 0, 0);
+            var pixels = greenAngryTexture.GetPixels();
+            for (int i = 0; i < pixels.Length; i++)
+            {
+                Color c = pixels[i];
+                pixels[i] = new Color(c.g, c.r, c.b, c.a);
+            }
+            greenAngryTexture.SetPixels(pixels);
+            greenAngryTexture.Apply();
+            greenAngryTexture.filterMode = source.filterMode;
+            Rect rect = redAngrySprite.rect;
+            Vector2 pivot = new Vector2(redAngrySprite.pivot.x / rect.width, redAngrySprite.pivot.y / rect.height);
+            greenAngrySprite = Sprite.Create(greenAngryTexture, rect, pivot, redAngrySprite.pixelsPerUnit);
+        }
+        finally { RenderTexture.active = previous; RenderTexture.ReleaseTemporary(rt); }
+    }
+
+    private void ResetBrainwaveCooldown()
+    {
+        brainwaveCooldown = Random.Range(Mathf.Min(minBrainwaveCooldown, maxBrainwaveCooldown), Mathf.Max(minBrainwaveCooldown, maxBrainwaveCooldown));
+    }
+
+    private void ClearBrainwave()
+    {
+        if (brainwaveCasting && brainwaveManager != null && brainwaveManager.AlienBrainwaveActive)
+            brainwaveManager.CancelForObstacleHit();
+        brainwaveCasting = false;
+        if (angryRenderer != null && redAngrySprite != null) angryRenderer.sprite = redAngrySprite;
+        SetAngryWarning(false);
+    }
+
+    private IEnumerator CastBrainwave()
+    {
+        if (isAttacking || isUltimateWarning || BrainwaveBlocksAttacks) yield break;
+        activeLaserBeams.RemoveAll(beam => beam == null);
+        if (activeLaserBeams.Count > 0) yield break;
+        isAttacking = true;
+        brainwaveCasting = true;
+        if (angryRenderer != null && greenAngrySprite != null) angryRenderer.sprite = greenAngrySprite;
+        SetAngryWarning(true);
+        Vector3 origin = transform.position;
+        float tell = 0f;
+        while (tell < 0.4f)
+        {
+            if (Time.timeScale > 0f) tell += Time.unscaledDeltaTime;
+            transform.position = origin + Vector3.right * Mathf.Sin(Time.unscaledTime * 65f) * 0.065f;
+            yield return null;
+        }
+        float duration = Random.Range(Mathf.Clamp(minBrainwaveDuration, 1f, 2.5f), Mathf.Clamp(maxBrainwaveDuration, 1f, 2.5f));
+        if (brainwaveManager != null && brainwaveManager.TryStartAlienBrainwave(duration, alienRenderer != null ? alienRenderer.sprite : null, alienRenderer != null && alienRenderer.flipX))
+        {
+            while (brainwaveManager.AlienBrainwaveActive)
+            {
+                transform.position = origin + Vector3.right * Mathf.Sin(Time.unscaledTime * 65f) * 0.065f;
+                yield return null;
+            }
+        }
+        transform.position = origin;
+        ClearBrainwave();
+        isAttacking = false;
+        yVelocity = 0f;
+        ResetBrainwaveCooldown();
+    }
+
     private float yVelocity;
     private float bobTimer;
     private float nextLaserTimer;
@@ -88,6 +185,7 @@ public class AlienBoss : MonoBehaviour
     public void BeginEndingExit()
     {
         StopAllCoroutines();
+        ClearBrainwave();
         if (ultimateShotWarning != null) Destroy(ultimateShotWarning);
         if (standardShotWarning != null) Destroy(standardShotWarning);
         SetAngryWarning(false);
@@ -96,6 +194,9 @@ public class AlienBoss : MonoBehaviour
 
     void OnDestroy()
     {
+        ClearBrainwave();
+        if (greenAngrySprite != null) Destroy(greenAngrySprite);
+        if (greenAngryTexture != null) Destroy(greenAngryTexture);
         if (ultimateShotWarning != null) Destroy(ultimateShotWarning);
         if (standardShotWarning != null) Destroy(standardShotWarning);
     }
@@ -108,6 +209,9 @@ public class AlienBoss : MonoBehaviour
             if (player != null) playerTransform = player.transform;
         }
 
+        PrepareBrainwaveVisual();
+        brainwaveManager = FindAnyObjectByType<PanicEventManagerVariantNoStop>();
+        ResetBrainwaveCooldown();
         SetAngryWarning(false);
         ScheduleNextLaser();
     }
@@ -122,7 +226,7 @@ public class AlienBoss : MonoBehaviour
             return;
         }
 
-        // คงเหลือเฉพาะระบบจับเวลาเลเซอร์ไว้ใน Update
+        if (!brainwaveCasting && Time.timeScale > 0f) brainwaveCooldown -= Time.unscaledDeltaTime;
         HandleLaserTimer();
     }
 
@@ -160,8 +264,13 @@ public class AlienBoss : MonoBehaviour
 
     private void HandleLaserTimer()
     {
-        if (isAttacking || isUltimateWarning || PanicObstacleRules.EventRunning) return;
+        if (isAttacking || isUltimateWarning || BrainwaveBlocksAttacks || PanicObstacleRules.EventRunning) return;
 
+        if (brainwaveCooldown <= 0f && brainwaveManager != null && brainwaveManager.isActiveAndEnabled)
+        {
+            StartCoroutine(CastBrainwave());
+            return;
+        }
         nextLaserTimer -= Time.deltaTime;
         if (nextLaserTimer <= 0f)
         {
@@ -191,7 +300,7 @@ public class AlienBoss : MonoBehaviour
 
     private IEnumerator FireStandardLaserSequence()
     {
-        if (playerTransform == null) yield break;
+        if (playerTransform == null || isAttacking || isUltimateWarning || BrainwaveBlocksAttacks) yield break;
 
         isAttacking = true;
 
@@ -254,51 +363,38 @@ public class AlienBoss : MonoBehaviour
 
     private IEnumerator FireUltimateLaserSequence()
     {
-        if (playerTransform == null) yield break;
+        if (playerTransform == null || isAttacking || isUltimateWarning || BrainwaveBlocksAttacks) yield break;
 
         yield return StartCoroutine(PlayUltimateWarning());
 
         isAttacking = true;
 
         float fixedX = fixedRightX;
+        // Keep the burst local to the Alien's initial position, without tracking the player.
+        float burstCenterY = transform.position.y;
         for (int shot = 0; shot < ultimateLaserCount; shot++)
         {
             while (PanicObstacleRules.EventRunning) yield return null;
-            float attackOffsetY = Random.Range(minAttackOffsetY, maxAttackOffsetY);
-            float targetY = playerTransform.position.y + attackOffsetY;
+            float spread = Mathf.Max(0f, ultimateSpreadY);
+            float targetY = burstCenterY + Random.Range(-spread, spread);
             float startY = transform.position.y;
-            float trackedY = startY;
             float timer = 0f;
 
-            // Each shot shows the exact lane that will remain locked until firing.
-            GameObject shotWarning = laserWarningLinePrefab != null
-                ? Instantiate(laserWarningLinePrefab, new Vector3(fixedX, startY, transform.position.z), Quaternion.identity)
-                : null;
-            ultimateShotWarning = shotWarning;
-            HazardWarningCue.Attach(shotWarning, true);
             while (timer < ultimateTrackDuration)
             {
                 timer += Time.deltaTime;
                 float progress = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(timer / Mathf.Max(0.01f, ultimateTrackDuration)));
-                trackedY = Mathf.Lerp(startY, targetY, progress);
+                float trackedY = Mathf.Lerp(startY, targetY, progress);
                 transform.position = new Vector3(fixedX, trackedY, transform.position.z);
-                if (shotWarning != null) shotWarning.transform.position = transform.position;
                 yield return null;
             }
 
             transform.position = new Vector3(fixedX, targetY, transform.position.z);
-            if (shotWarning != null) shotWarning.transform.position = transform.position;
-            yield return new WaitForSeconds(Mathf.Max(0.25f, ultimateHoldDuration));
             while (PanicObstacleRules.EventRunning) yield return null;
-            if (shotWarning != null) Destroy(shotWarning);
-            ultimateShotWarning = null;
-
             FreezeLaserBeam(fixedX, targetY);
 
             if (shot < ultimateLaserCount - 1)
-            {
                 yield return new WaitForSeconds(ultimateLaserInterval);
-            }
         }
 
         yVelocity = 0f;
@@ -343,6 +439,7 @@ public class AlienBoss : MonoBehaviour
 
     private void FreezeLaserBeam(float x, float y)
     {
+        if (BrainwaveBlocksAttacks) return;
         if (laserBeamPrefab == null)
         {
             Debug.LogWarning("[AlienBoss] ยังไม่ได้ใส่ Laser Beam Prefab");
@@ -350,6 +447,8 @@ public class AlienBoss : MonoBehaviour
         }
 
         GameObject beam = Instantiate(laserBeamPrefab, new Vector3(x, y, 0f), Quaternion.identity);
+        activeLaserBeams.RemoveAll(active => active == null);
+        activeLaserBeams.Add(beam);
 
         Obstacle obs = beam.GetComponent<Obstacle>();
         if (obs != null)
