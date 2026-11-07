@@ -29638,6 +29638,8 @@ MonoBehaviour:
   blueUIContainer: {fileID: 795522146}
   blueProgressBar: {fileID: 1746439709}
   blueTimerText: {fileID: 166317572}
+  guidePanelSprite: {fileID: 10907, guid: 0000000000000000f000000000000000, type: 0}
+  guideButtonSprite: {fileID: 10905, guid: 0000000000000000f000000000000000, type: 0}
   vcam: {fileID: 354274033}
   activeShakeAmplitude: 1
   mashShakePulse: 2.5

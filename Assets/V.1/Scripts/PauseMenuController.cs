@@ -9,10 +9,12 @@ public class PauseMenuController : MonoBehaviour
     [SerializeField] private PlayerController player;
 
     private bool isPaused = false;
+    private PanicEventManagerVariantNoStop panicEvents;
     public bool IsPaused => isPaused;
 
     void Start()
     {
+        panicEvents = FindAnyObjectByType<PanicEventManagerVariantNoStop>();
         if (player == null)
         {
             player = FindAnyObjectByType<PlayerController>();
@@ -29,6 +31,7 @@ public class PauseMenuController : MonoBehaviour
 
     public void TogglePause()
     {
+        if (panicEvents != null && panicEvents.IsShowingEventGuide) return;
         if (isPaused) ResumeGame();
         else PauseGame();
     }

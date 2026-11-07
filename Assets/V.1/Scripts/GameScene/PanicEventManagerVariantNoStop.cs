@@ -124,6 +124,10 @@ public class PanicEventManagerVariantNoStop : MonoBehaviour
     public Image blueProgressBar;
     public TextMeshProUGUI blueTimerText;
 
+    [Header("First Panic Guide Style (Main Menu)")]
+    public Sprite guidePanelSprite;
+    public Sprite guideButtonSprite;
+
     [Header("Camera Shake Settings (Cinemachine 3.1.7)")]
     [Tooltip("CinemachineCamera ที่มี CinemachineBasicMultiChannelPerlin ติดอยู่")]
     public CinemachineCamera vcam;
@@ -153,6 +157,12 @@ public class PanicEventManagerVariantNoStop : MonoBehaviour
     private float nextEventCooldown;
     private Vector2 defaultWarningPos;
     private Coroutine warningAnimCoroutine;
+    private PanicEventGuide eventGuide;
+    private Coroutine guideCoroutine;
+    private bool guideOwnsPause;
+    private float guideTimeScaleBefore;
+    private bool guideInputLockedBefore;
+    public bool IsShowingEventGuide => guideOwnsPause;
     private Rigidbody2D blueBody;
     private float blueGravityBefore;
     private bool blueInputLockedBefore;
@@ -514,6 +524,13 @@ public class PanicEventManagerVariantNoStop : MonoBehaviour
     private void SetBrainPhase(EventType type)
     {
         ReleaseBrainBlue();
+        if (TryShowEventGuide(() => BeginBrainPhase(type))) return;
+        BeginBrainPhase(type);
+    }
+
+    private void BeginBrainPhase(EventType type)
+    {
+        ReleaseBrainBlue();
         brainInMicroGap = false;
         brainMicroGapRemaining = 0f;
         currentState = EventState.Active;
@@ -824,6 +841,7 @@ public class PanicEventManagerVariantNoStop : MonoBehaviour
 
     void OnDestroy()
     {
+        if (eventGuide != null) Destroy(eventGuide.gameObject);
         if (brainCircleSprite != null && brainCircleSprite.texture != null)
             Destroy(brainCircleSprite.texture);
         foreach (Sprite sprite in eventHudSprites)
@@ -839,7 +857,8 @@ public class PanicEventManagerVariantNoStop : MonoBehaviour
         if (player == null) player = FindAnyObjectByType<PlayerController>();
         if (gum == null) gum = FindAnyObjectByType<GumController>();
         if (panicVignetteController == null) panicVignetteController = FindAnyObjectByType<PanicVignetteController>();
-
+        eventGuide = PanicEventGuide.Create(redCountText != null ? redCountText : blueTimerText,
+            guidePanelSprite, guideButtonSprite);
 
         if (vcam == null) vcam = FindAnyObjectByType<CinemachineCamera>();
         if (vcam != null)
@@ -859,6 +878,7 @@ public class PanicEventManagerVariantNoStop : MonoBehaviour
 
     void OnDisable()
     {
+        CancelEventGuide();
         if (AlienBrainwaveActive || currentEvent == EventType.Blue_HoldOff || blueOwnsPlayer)
             EndEvent(false);
         else
@@ -867,6 +887,7 @@ public class PanicEventManagerVariantNoStop : MonoBehaviour
 
     void Update()
     {
+        if (guideOwnsPause) return;
         if (blueOwnsClock && Time.timeScale > 0f) Time.timeScale = blueSlowScale;
         if (noiseComponent != null && currentState == EventState.Active)
         {
@@ -923,6 +944,51 @@ public class PanicEventManagerVariantNoStop : MonoBehaviour
         currentState = EventState.Warning;
 
         currentEvent = Random.value > 0.5f ? EventType.Red_Mash : EventType.Blue_HoldOff;
+        if (TryShowEventGuide(BeginWarning)) return;
+        BeginWarning();
+    }
+
+    private bool TryShowEventGuide(System.Action continueEvent)
+    {
+        if (eventGuide == null || !eventGuide.TryShow()) return false;
+        guideTimeScaleBefore = Time.timeScale;
+        guideInputLockedBefore = player != null && player.IsInputLocked;
+        guideOwnsPause = true;
+        Time.timeScale = 0f;
+        if (player != null) player.SetInputLocked(true);
+        guideCoroutine = StartCoroutine(WaitForEventGuide(continueEvent));
+        return true;
+    }
+
+    private IEnumerator WaitForEventGuide(System.Action continueEvent)
+    {
+        while (eventGuide != null && eventGuide.IsOpen) yield return null;
+        // Keep the closing pointer/Space press out of the warning and event input.
+        yield return null;
+        while (PanicEventGuide.IsEventInputHeld()) yield return null;
+        RestoreGuidePause();
+        guideCoroutine = null;
+        continueEvent();
+    }
+
+    private void RestoreGuidePause()
+    {
+        if (!guideOwnsPause) return;
+        guideOwnsPause = false;
+        Time.timeScale = guideTimeScaleBefore;
+        if (player != null) player.SetInputLocked(guideInputLockedBefore);
+    }
+
+    private void CancelEventGuide()
+    {
+        if (guideCoroutine != null) StopCoroutine(guideCoroutine);
+        guideCoroutine = null;
+        if (eventGuide != null) eventGuide.Hide();
+        RestoreGuidePause();
+    }
+
+    private void BeginWarning()
+    {
         if (currentEvent == EventType.Blue_HoldOff)
         {
             if (warningAnimCoroutine != null) StopCoroutine(warningAnimCoroutine);
@@ -1140,6 +1206,7 @@ public class PanicEventManagerVariantNoStop : MonoBehaviour
 
     private void EndEvent(bool success)
     {
+        CancelEventGuide();
         bool endingBrain = AlienBrainwaveActive;
         AlienBrainwaveActive = false;
         brainCountingDown = false;
