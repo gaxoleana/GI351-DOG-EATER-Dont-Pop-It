@@ -12,6 +12,16 @@ public class DeadZonePlaceholder : MonoBehaviour
     public Color placeholderColor = new Color(1f, 1f, 1f, 0.35f);
     public float radiusMultiplier = 0.55f;
 
+    [Header("About-To-Pop Feedback")]
+    [Tooltip("สีแดงเข้มจริงของวงตอนกำลังจะแตก")]
+    public Color darkRedColor = new Color(0.42f, 0f, 0f, 1f);
+
+    [Tooltip("ความแรงของการสั่นของวงเมื่อใกล้แตก")]
+    public float maxShakeAmplitude = 0.09f;
+
+    [Tooltip("ความถี่ของการสั่นของวงเมื่อใกล้แตก")]
+    public float shakeFrequency = 85f;
+
     private LineRenderer line;
     private LineRenderer contrastLine;
     private PlayerController player;
@@ -107,7 +117,18 @@ public class DeadZonePlaceholder : MonoBehaviour
     {
         if (gum == null) return;
 
-        transform.position = gum.DeadZoneCenter;
+        float darken = gum.AboutToPopDarkenProgress;
+        Vector3 shakeOffset = Vector3.zero;
+        if (darken > 0f)
+        {
+            float amp = maxShakeAmplitude * darken * darken;
+            shakeOffset = new Vector3(
+                Mathf.Sin(Time.time * shakeFrequency) * amp,
+                Mathf.Cos(Time.time * (shakeFrequency * 1.23f)) * amp,
+                0f);
+        }
+
+        transform.position = gum.DeadZoneCenter + shakeOffset;
 
         float radius = gum.CurrentMaxVisualScale * radiusMultiplier;
 
@@ -120,19 +141,50 @@ public class DeadZonePlaceholder : MonoBehaviour
             contrastLine.SetPosition(i, new Vector3(x, y, 0f));
         }
 
-        line.widthMultiplier = lineWidth;
+        line.widthMultiplier = Mathf.Lerp(lineWidth, lineWidth * 1.4f, darken);
+        if (contrastLine != null)
+        {
+            contrastLine.widthMultiplier = line.widthMultiplier + 0.04f;
+        }
+        ApplyAlpha();
     }
 
     private void ApplyAlpha()
     {
-        Color color = placeholderColor;
-        color.a = currentAlpha;
+        float darken = gum != null ? gum.AboutToPopDarkenProgress : 0f;
+        float opacity = placeholderColor.a > 0f ? currentAlpha / placeholderColor.a : 0f;
+
+        Color midRed = new Color(1f, 0.08f, 0.08f, 0.98f);
+        Color targetDarkRed = gum != null ? gum.ringDarkRedColor : darkRedColor;
+
+        Color color;
+        if (darken <= 0f)
+        {
+            color = placeholderColor;
+            color.a = currentAlpha;
+        }
+        else if (darken <= 0.45f)
+        {
+            float t = Mathf.InverseLerp(0f, 0.45f, darken);
+            color = Color.Lerp(placeholderColor, midRed, t);
+            color.a *= opacity;
+        }
+        else
+        {
+            float t = Mathf.InverseLerp(0.45f, 1f, darken);
+            color = Color.Lerp(midRed, targetDarkRed, t);
+            color.a *= opacity;
+        }
+
         line.startColor = color;
         line.endColor = color;
+
         if (contrastLine != null)
         {
-            float opacity = placeholderColor.a > 0f ? currentAlpha / placeholderColor.a : 0f;
-            Color rimColor = new Color(0.04f, 0.12f, 0.2f, 0.85f * opacity);
+            Color baseRim = new Color(0.04f, 0.12f, 0.2f, 0.85f);
+            Color dangerRim = new Color(0.22f, 0f, 0f, 0.95f);
+            Color rimColor = Color.Lerp(baseRim, dangerRim, darken);
+            rimColor.a *= opacity;
             contrastLine.startColor = contrastLine.endColor = rimColor;
         }
     }

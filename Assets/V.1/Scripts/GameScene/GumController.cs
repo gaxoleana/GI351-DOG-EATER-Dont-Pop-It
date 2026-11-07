@@ -100,6 +100,12 @@ public class GumController : MonoBehaviour
     [Tooltip("สีวงแหวนตอนอันตรายเต็มที่")]
     public Color ringDangerColor = new Color(1f, 0f, 0f, 1f); // แดงเข้ม ทึบ
 
+    [Tooltip("สีแดงเข้มจริงของวงแหวนจังหวะสุดท้ายก่อนหมากฝรั่งแตกออก")]
+    public Color ringDarkRedColor = new Color(0.42f, 0f, 0f, 1f);
+
+    [Tooltip("เวลาที่วงแหวนเปลี่ยนเป็นสีแดงเข้มขึ้นเรื่อย ๆ และสั่นเมื่อถึงขอบเขต ก่อนจะแตกจริง (วินาที)")]
+    public float criticalDarkenDuration = 0.35f;
+
     [Tooltip("sizeRatio ที่วงแหวนเริ่ม fade in (0-1)")]
     [Range(0f, 1f)] public float warningRatioStart = 0.6f;
 
@@ -160,9 +166,33 @@ public class GumController : MonoBehaviour
     private float recoveryDuration;
     private float recoveryStartTime;
 
+    private float criticalDarkenTimer = 0f;
+    private Color defaultGumColor = Color.white;
+    private Color defaultGumRootColor = Color.white;
+    private bool defaultColorsCached = false;
+
     /// <summary>เวลาที่เหลือ (วินาที) ก่อนจะเป่าได้ใหม่ — 0 ถ้าไม่ได้อยู่ในสถานะ Popped</summary>
     public float RecoveryTimeRemaining =>
         currentState == GumState.Popped ? Mathf.Max(0f, recoveryDuration - (Time.time - recoveryStartTime)) : 0f;
+
+    /// <summary>
+    /// ค่าความเข้มข้นตอนใกล้แตก (0 = ยังไม่เข้าช่วงเตือน, 0..0.6 = กำลังเข้าใกล้ขอบเขต, 0.6..1.0 = กำลังเปลี่ยนเป็นสีแดงเข้มจริงก่อนแตก)
+    /// </summary>
+    public float AboutToPopDarkenProgress
+    {
+        get
+        {
+            if (currentState != GumState.Normal) return 0f;
+            float sizeRatio = GetSizeRatio();
+            if (sizeRatio < warningRatioStart) return 0f;
+
+            float approachPart = Mathf.InverseLerp(warningRatioStart, 1f, sizeRatio) * 0.6f;
+            float criticalPart = criticalDarkenDuration > 0f
+                ? Mathf.Clamp01(criticalDarkenTimer / criticalDarkenDuration) * 0.4f
+                : (sizeRatio >= 1f ? 0.4f : 0f);
+            return Mathf.Clamp01(approachPart + criticalPart);
+        }
+    }
 
     public Vector3 DeadZoneCenter
     {
@@ -200,6 +230,8 @@ public class GumController : MonoBehaviour
         highestGrowthStep = 0;
         currentDeadZoneThreshold = baseDeadZoneThreshold;
 
+        CacheDefaultColors();
+
         if (ringRenderer == null && ringVisual != null)
         {
             ringRenderer = ringVisual.GetComponent<SpriteRenderer>();
@@ -214,6 +246,30 @@ public class GumController : MonoBehaviour
         }
     }
 
+    private void CacheDefaultColors()
+    {
+        if (defaultColorsCached) return;
+        if (gumSpriteRenderer != null) defaultGumColor = gumSpriteRenderer.color;
+        if (gumRootSpriteRenderer != null) defaultGumRootColor = gumRootSpriteRenderer.color;
+        defaultColorsCached = true;
+    }
+
+    /// <summary>
+    /// เปลี่ยนสีลูกโป่งเป็นสีทองในระหว่างที่ผู้เล่นได้รับ Immunity และคืนสีเดิมเมื่อหมดเวลา
+    /// </summary>
+    public void SetGoldImmunityVisual(bool active, Color goldColor)
+    {
+        CacheDefaultColors();
+        if (gumSpriteRenderer != null)
+        {
+            gumSpriteRenderer.color = active ? goldColor : defaultGumColor;
+        }
+        if (gumRootSpriteRenderer != null)
+        {
+            gumRootSpriteRenderer.color = active ? goldColor : defaultGumRootColor;
+        }
+    }
+
     void Update()
     {
         UpdateDeadZoneThreshold();
@@ -223,8 +279,9 @@ public class GumController : MonoBehaviour
         switch (currentState)
         {
             case GumState.Normal:
-                // การโต/ยุบของ gum ถูกควบคุมจาก PlayerController ผ่าน Grow()/Shrink()
-                if (currentSize >= currentDeadZoneThreshold)
+                // เมื่อเป่าจนถึงขอบเขต วงจะเปลี่ยนเป็นสีแดงเข้มขึ้นเรื่อย ๆ และสั่น
+                // เมื่อเปลี่ยนเป็นสีแดงเข้มจริงครบตามเวลา (criticalDarkenDuration) จึงค่อยแตกออก
+                if (currentSize >= currentDeadZoneThreshold && criticalDarkenTimer >= criticalDarkenDuration)
                 {
                     Pop();
                 }
@@ -272,7 +329,9 @@ public class GumController : MonoBehaviour
         // pulse เฉพาะตอน Normal + อยู่โซนอันตราย ให้ความรู้สึกเร่งเร้า
         if (currentState == GumState.Normal && sizeRatio >= dangerRatioStart)
         {
-            pulse = Mathf.Sin(Time.time * dangerPulseSpeed) * dangerPulseAmount;
+            float darken = AboutToPopDarkenProgress;
+            float speed = Mathf.Lerp(dangerPulseSpeed, dangerPulseSpeed * 2.2f, darken);
+            pulse = Mathf.Sin(Time.time * speed) * dangerPulseAmount;
         }
 
         if (gumVisual != null)
@@ -296,7 +355,18 @@ public class GumController : MonoBehaviour
     {
         if (ringVisual == null) return;
 
-        ringVisual.position = DeadZoneCenter;
+        float darken = AboutToPopDarkenProgress;
+        Vector3 shakeOffset = Vector3.zero;
+        if (currentState == GumState.Normal && darken > 0f)
+        {
+            float shakeAmp = Mathf.Lerp(0.01f, 0.08f, darken) * darken;
+            shakeOffset = new Vector3(
+                Mathf.Sin(Time.time * 75f) * shakeAmp,
+                Mathf.Cos(Time.time * 93f) * shakeAmp,
+                0f);
+        }
+
+        ringVisual.position = DeadZoneCenter + shakeOffset;
 
         // ขนาดวงแหวน = ตามขนาด gum ปัจจุบัน + ระยะห่างคงที่ (ringSizeMultiplier)
         float gumScale = currentState == GumState.Popped
@@ -316,8 +386,16 @@ public class GumController : MonoBehaviour
             return;
         }
 
-        float t = Mathf.InverseLerp(warningRatioStart, dangerRatioStart, sizeRatio);
-        ringRenderer.color = Color.Lerp(ringWarningColor, ringDangerColor, t);
+        if (darken <= 0.6f)
+        {
+            float t = Mathf.InverseLerp(0f, 0.6f, darken);
+            ringRenderer.color = Color.Lerp(ringWarningColor, ringDangerColor, t);
+        }
+        else
+        {
+            float t = Mathf.InverseLerp(0.6f, 1f, darken);
+            ringRenderer.color = Color.Lerp(ringDangerColor, ringDarkRedColor, t);
+        }
     }
 
     /// <summary>
@@ -336,7 +414,7 @@ public class GumController : MonoBehaviour
         if (shakeTimer < shakeInterval) return;
         shakeTimer = 0f;
 
-        float t = Mathf.InverseLerp(dangerRatioStart, 1f, sizeRatio);
+        float t = Mathf.Max(Mathf.InverseLerp(dangerRatioStart, 1f, sizeRatio), AboutToPopDarkenProgress);
         float force = Mathf.Lerp(shakeForceAtDangerStart, shakeForceAtMaxRisk, t);
 
         impulseSource.GenerateImpulseWithForce(force);
@@ -430,12 +508,21 @@ public class GumController : MonoBehaviour
     {
         if (currentState != GumState.Normal) return;
         currentSize = Mathf.Min(currentSize + growthRate * deltaTime, currentDeadZoneThreshold);
+
+        if (currentSize >= currentDeadZoneThreshold)
+        {
+            criticalDarkenTimer = Mathf.Min(criticalDarkenDuration, criticalDarkenTimer + deltaTime);
+        }
     }
 
     /// <summary>เรียกจาก PlayerController ตอนปล่อย (เฉพาะตอน state = Normal)</summary>
     public void Shrink(float deltaTime)
     {
         if (currentState != GumState.Normal) return;
+        if (criticalDarkenTimer > 0f)
+        {
+            criticalDarkenTimer = Mathf.Max(0f, criticalDarkenTimer - deltaTime * 2f);
+        }
         currentSize = Mathf.Max(currentSize - shrinkRate * deltaTime, 0f);
     }
 
@@ -459,6 +546,7 @@ public class GumController : MonoBehaviour
     {
         if (currentState != GumState.Normal) return;
         currentSize = minSize;
+        criticalDarkenTimer = 0f;
     }
 
     public int LastInstantPopFrame { get; private set; } = -1;
@@ -468,6 +556,7 @@ public class GumController : MonoBehaviour
         StopAllCoroutines();
         LastInstantPopFrame = Time.frameCount;
         currentSize = 0f;
+        criticalDarkenTimer = 0f;
         currentState = GumState.Normal;
         isForcedRecovery = false;
         stateTimer = 0f;
@@ -484,6 +573,7 @@ public class GumController : MonoBehaviour
     {
         currentState = GumState.Popped;
         stateTimer = 0f;
+        criticalDarkenTimer = 0f;
         isForcedRecovery = false;
         recoveryDuration = popRecoveryTime;
         recoveryStartTime = Time.time;
@@ -510,6 +600,7 @@ public class GumController : MonoBehaviour
         if (currentState == GumState.Popped) return;
 
         currentState = GumState.Popped;
+        criticalDarkenTimer = 0f;
         isForcedRecovery = true;
         float duration = (customStunDuration > 0f) ? customStunDuration : normalStunDuration;
         recoveryDuration = duration;
@@ -540,6 +631,7 @@ public class GumController : MonoBehaviour
         // minVisualScale นิดหน่อย แล้วพอ Shrink() ทำงานต่อ (ถ้ายังไม่ได้กดเป่า) จะเห็น gum
         // หดลงอีกรอบทันทีที่โผล่มา ดูเหมือนขนาดเพี้ยน/กระตุก
         currentSize = 0f;
+        criticalDarkenTimer = 0f;
 
         currentState = GumState.Normal;
 
@@ -553,6 +645,7 @@ public class GumController : MonoBehaviour
     private void ResetGum()
     {
         currentSize = 0f;
+        criticalDarkenTimer = 0f;
         currentState = GumState.Normal;
 
         // เปิด sprite กลับมา (คู่กับที่ Pop() สั่งปิดไว้) — เช็ค gumRoot ด้วย
@@ -567,6 +660,7 @@ public class GumController : MonoBehaviour
         if (currentState == GumState.Dazed) return; // กัน re-trigger ซ้อน
         currentState = GumState.Dazed;
         stateTimer = 0f;
+        criticalDarkenTimer = 0f;
         currentSize = 0f; // มึนแล้ว gum ยุบ ต้องเริ่มใหม่ตอนหายมึน
         OnDazedStart?.Invoke();
     }

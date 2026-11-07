@@ -101,6 +101,20 @@ public class PanicEventManagerVariantNoStop : MonoBehaviour
     [HideInInspector]
     public float currentBlueDuration; // เก็บเวลาที่สุ่มได้ในรอบนั้นๆ
 
+    [Header("Green Angry Cat Event (Brainwave) Settings")]
+    [Tooltip("เวลานับถอยหลัง 3 2 1 ก่อนเริ่ม Event แมวโกรธ (วินาที)")]
+    public float brainwaveCountdownDuration = 3.0f;
+
+    [Tooltip("จำนวนช่วงย่อยของ Event แมวโกรธ (3 ช่วง ช่วงละ 1 วินาที รวม 3 วินาที)")]
+    public int brainwavePhaseCount = 3;
+
+    [Tooltip("เวลาต่อ 1 ช่วงย่อยของ Event แมวโกรธ (วินาที)")]
+    public float brainwaveSinglePhaseDuration = 1.0f;
+
+    [Tooltip("จังหวะพักหายใจและกระพริบเตือนสั้น ๆ ระหว่างช่วง (วินาที)")]
+    [Range(0.1f, 0.35f)]
+    public float brainwaveMicroGapDuration = 0.18f;
+
     [Header("Active Event UI Feedback")]
     public GameObject redUIContainer;
     public Image redProgressBar;
@@ -150,40 +164,324 @@ public class PanicEventManagerVariantNoStop : MonoBehaviour
     [Range(0.1f, 1f)] public float blueWorldSpeed = 0.3f;
 
     public bool AlienBrainwaveActive { get; private set; }
+    private bool brainCountingDown;
+    private float brainCountdownTotal;
+    private float brainCountdownRemaining;
+    private int brainCurrentPhaseIndex;
     private float brainRemaining, brainPhaseRemaining, brainPhaseDuration;
+    private bool brainInMicroGap;
+    private float brainMicroGapRemaining;
+    private EventType[] brainSequence;
     private bool brainInputBefore;
     private Image brainPortrait;
     private Image brainScreenTint;
+    private TextMeshProUGUI brainCountdownText;
+    private RectTransform brainSequenceRoot;
+    private RectTransform[] brainDotRects;
+    private Image[] brainDotBorders;
+    private Image[] brainDotFills;
+    private Sprite brainCircleSprite;
 
     public bool TryStartAlienBrainwave(float duration, Sprite portrait, bool flipX)
     {
         if (!isActiveAndEnabled || currentState != EventState.Idle || player == null ||
             gum == null || gum.currentState != GumController.GumState.Normal || Time.timeScale <= 0f) return false;
+
         brainInputBefore = player.IsInputLocked;
         AlienBrainwaveActive = true;
-        brainRemaining = Mathf.Clamp(duration, 1f, 2.5f);
+        brainCountingDown = true;
+        brainInMicroGap = false;
+        brainMicroGapRemaining = 0f;
+        brainCountdownTotal = Mathf.Max(1f, brainwaveCountdownDuration);
+        brainCountdownRemaining = brainCountdownTotal;
+        brainCurrentPhaseIndex = 0;
+
+        int phaseCount = Mathf.Max(1, brainwavePhaseCount);
+        float singleDuration = Mathf.Max(0.1f, brainwaveSinglePhaseDuration);
+        brainRemaining = phaseCount * singleDuration;
+
+        // สุ่มลำดับทั้ง 3 ช่วงไว้ล่วงหน้าตั้งแต่เริ่มขึ้นรูปแมวกลางจอ
+        brainSequence = new EventType[phaseCount];
+        for (int i = 0; i < phaseCount; i++)
+        {
+            brainSequence[i] = Random.value < 0.5f ? EventType.Red_Mash : EventType.Blue_HoldOff;
+        }
+
+        currentState = EventState.Warning;
+        currentEvent = EventType.None;
         HideAllUI();
-        if (portrait != null && warningRectTransform != null)
+
+        Transform uiParent = warningRectTransform != null ? warningRectTransform.parent : null;
+        if (uiParent == null && redCountText != null)
+        {
+            Canvas canvas = redCountText.GetComponentInParent<Canvas>();
+            if (canvas != null) uiParent = canvas.transform;
+        }
+
+        if (uiParent != null)
         {
             var tintObject = new GameObject("Alien Brainwave Screen Tint", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
             brainScreenTint = tintObject.GetComponent<Image>();
-            brainScreenTint.rectTransform.SetParent(warningRectTransform.parent, false);
+            brainScreenTint.rectTransform.SetParent(uiParent, false);
             brainScreenTint.rectTransform.anchorMin = Vector2.zero;
             brainScreenTint.rectTransform.anchorMax = Vector2.one;
             brainScreenTint.rectTransform.offsetMin = brainScreenTint.rectTransform.offsetMax = Vector2.zero;
+            brainScreenTint.color = new Color(0.1f, 0.85f, 0.2f, 0.1f);
             brainScreenTint.raycastTarget = false;
-            var go = new GameObject("Alien Brainwave Portrait", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
-            brainPortrait = go.GetComponent<Image>();
-            brainPortrait.rectTransform.SetParent(warningRectTransform.parent, false);
-            brainPortrait.rectTransform.anchorMin = brainPortrait.rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
-            brainPortrait.rectTransform.sizeDelta = new Vector2(320f, 320f);
-            brainPortrait.rectTransform.localScale = new Vector3(flipX ? -1f : 1f, 1f, 1f);
-            brainPortrait.sprite = portrait;
-            brainPortrait.preserveAspect = true;
-            brainPortrait.raycastTarget = false;
+
+            if (portrait != null)
+            {
+                var go = new GameObject("Alien Brainwave Portrait", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+                brainPortrait = go.GetComponent<Image>();
+                brainPortrait.rectTransform.SetParent(uiParent, false);
+                brainPortrait.rectTransform.anchorMin = brainPortrait.rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
+                brainPortrait.rectTransform.anchoredPosition = new Vector2(0f, 100f);
+                brainPortrait.rectTransform.sizeDelta = new Vector2(300f, 300f);
+                brainPortrait.rectTransform.localScale = new Vector3(flipX ? -1f : 1f, 1f, 1f);
+                brainPortrait.sprite = portrait;
+                brainPortrait.color = Color.Lerp(Color.white, new Color(0.65f, 1f, 0.65f), 0.35f);
+                brainPortrait.preserveAspect = true;
+                brainPortrait.raycastTarget = false;
+            }
+
+            CreateBrainSequenceDots(uiParent, phaseCount);
+            brainCountdownText = CreateBrainCountdownText(uiParent);
         }
-        SetBrainPhase(Random.value < 0.5f ? EventType.Red_Mash : EventType.Blue_HoldOff);
+
+        UpdateBrainCountdownUI();
         return true;
+    }
+
+    private Sprite GetOrCreateBrainCircleSprite()
+    {
+        if (brainCircleSprite != null) return brainCircleSprite;
+
+        const int size = 64;
+        Texture2D tex = new Texture2D(size, size, TextureFormat.RGBA32, false);
+        tex.filterMode = FilterMode.Bilinear;
+        tex.wrapMode = TextureWrapMode.Clamp;
+
+        float center = (size - 1) * 0.5f;
+        float radius = size * 0.46f;
+        for (int y = 0; y < size; y++)
+        {
+            for (int x = 0; x < size; x++)
+            {
+                float dist = Vector2.Distance(new Vector2(x, y), new Vector2(center, center));
+                float alpha = Mathf.Clamp01((radius - dist) * 1.5f);
+                tex.SetPixel(x, y, new Color(1f, 1f, 1f, alpha));
+            }
+        }
+        tex.Apply();
+
+        brainCircleSprite = Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), 100f);
+        eventHudSprites.Add(brainCircleSprite);
+        return brainCircleSprite;
+    }
+
+    private void CreateBrainSequenceDots(Transform uiParent, int count)
+    {
+        Sprite circleSprite = GetOrCreateBrainCircleSprite();
+
+        GameObject rootObj = new GameObject("Alien Brainwave Sequence Dots", typeof(RectTransform));
+        brainSequenceRoot = rootObj.GetComponent<RectTransform>();
+        brainSequenceRoot.SetParent(uiParent, false);
+        brainSequenceRoot.anchorMin = new Vector2(0.5f, 0.5f);
+        brainSequenceRoot.anchorMax = new Vector2(0.5f, 0.5f);
+        brainSequenceRoot.pivot = new Vector2(0.5f, 0.5f);
+        brainSequenceRoot.anchoredPosition = new Vector2(0f, -55f);
+        brainSequenceRoot.sizeDelta = new Vector2(count * 90f, 80f);
+
+        brainDotRects = new RectTransform[count];
+        brainDotBorders = new Image[count];
+        brainDotFills = new Image[count];
+
+        float spacing = 86f;
+        float startX = -(count - 1) * spacing * 0.5f;
+
+        for (int i = 0; i < count; i++)
+        {
+            GameObject dotObj = new GameObject($"Sequence Dot {i + 1}", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+            RectTransform dotRt = dotObj.GetComponent<RectTransform>();
+            dotRt.SetParent(brainSequenceRoot, false);
+            dotRt.anchorMin = new Vector2(0.5f, 0.5f);
+            dotRt.anchorMax = new Vector2(0.5f, 0.5f);
+            dotRt.pivot = new Vector2(0.5f, 0.5f);
+            dotRt.anchoredPosition = new Vector2(startX + i * spacing, 0f);
+            dotRt.sizeDelta = new Vector2(64f, 64f);
+
+            Image borderImg = dotObj.GetComponent<Image>();
+            borderImg.sprite = circleSprite;
+            borderImg.color = new Color(0.08f, 0.1f, 0.14f, 0.95f);
+            borderImg.raycastTarget = false;
+
+            GameObject fillObj = new GameObject("Fill", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+            RectTransform fillRt = fillObj.GetComponent<RectTransform>();
+            fillRt.SetParent(dotRt, false);
+            fillRt.anchorMin = new Vector2(0.5f, 0.5f);
+            fillRt.anchorMax = new Vector2(0.5f, 0.5f);
+            fillRt.pivot = new Vector2(0.5f, 0.5f);
+            fillRt.anchoredPosition = Vector2.zero;
+            fillRt.sizeDelta = new Vector2(50f, 50f);
+
+            Image fillImg = fillObj.GetComponent<Image>();
+            fillImg.sprite = circleSprite;
+            fillImg.color = new Color(0.22f, 0.25f, 0.3f, 0.85f);
+            fillImg.raycastTarget = false;
+
+            brainDotRects[i] = dotRt;
+            brainDotBorders[i] = borderImg;
+            brainDotFills[i] = fillImg;
+        }
+    }
+
+    private Color GetBrainEventColor(EventType type)
+    {
+        return type == EventType.Red_Mash
+            ? new Color(1f, 0.2f, 0.25f, 1f)
+            : new Color(0.18f, 0.68f, 1f, 1f);
+    }
+
+    private void UpdateBrainSequenceDotsUI()
+    {
+        if (brainSequenceRoot == null || brainSequence == null || brainDotRects == null) return;
+
+        int count = brainSequence.Length;
+        brainSequenceRoot.anchoredPosition = brainCountingDown ? new Vector2(0f, -55f) : new Vector2(0f, 35f);
+
+        if (brainCountingDown)
+        {
+            // ค่อย ๆ เปิดสีทีละดวงตามจังหวะนับ 3 -> เปิดดวงที่ 1, 2 -> เปิดดวงที่ 2, 1 -> เปิดดวงที่ 3
+            float elapsed = Mathf.Clamp(brainCountdownTotal - brainCountdownRemaining, 0f, brainCountdownTotal);
+            float stepDuration = brainCountdownTotal / Mathf.Max(1, count);
+            int revealedCount = Mathf.Clamp(Mathf.FloorToInt(elapsed / stepDuration) + 1, 1, count);
+
+            for (int i = 0; i < count; i++)
+            {
+                bool revealed = i < revealedCount;
+                if (revealed)
+                {
+                    Color c = GetBrainEventColor(brainSequence[i]);
+                    brainDotFills[i].color = c;
+                    brainDotBorders[i].color = Color.Lerp(new Color(0.08f, 0.1f, 0.14f, 0.95f), Color.white, i == revealedCount - 1 ? 0.65f : 0.25f);
+
+                    float stepElapsed = elapsed - i * stepDuration;
+                    float pop = (i == revealedCount - 1 && stepElapsed <= 0.25f)
+                        ? 1f + Mathf.Sin(Mathf.Clamp01(stepElapsed / 0.25f) * Mathf.PI) * 0.28f
+                        : 1f;
+                    brainDotRects[i].localScale = Vector3.one * pop;
+                }
+                else
+                {
+                    brainDotFills[i].color = new Color(0.22f, 0.25f, 0.3f, 0.75f);
+                    brainDotBorders[i].color = new Color(0.08f, 0.1f, 0.14f, 0.85f);
+                    brainDotRects[i].localScale = Vector3.one * 0.9f;
+                }
+            }
+            return;
+        }
+
+        // ช่วงเริ่มเล่น Event จริง (ไฮไลต์ดวงปัจจุบัน และกระพริบเตือนช่วงถัดไป)
+        for (int i = 0; i < count; i++)
+        {
+            Color baseColor = GetBrainEventColor(brainSequence[i]);
+            if (i < brainCurrentPhaseIndex)
+            {
+                // ดวงที่ผ่านไปแล้ว
+                brainDotFills[i].color = new Color(baseColor.r * 0.55f, baseColor.g * 0.55f, baseColor.b * 0.55f, 0.45f);
+                brainDotBorders[i].color = new Color(0.08f, 0.1f, 0.14f, 0.5f);
+                brainDotRects[i].localScale = Vector3.one * 0.85f;
+            }
+            else if (i == brainCurrentPhaseIndex)
+            {
+                if (brainInMicroGap)
+                {
+                    // กระพริบเตือนสั้น ๆ ในช่วง Micro-Gap ก่อนเข้าสีถัดไป
+                    float blink = 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 55f);
+                    brainDotFills[i].color = Color.Lerp(baseColor, Color.white, blink * 0.65f);
+                    brainDotBorders[i].color = Color.white;
+                    brainDotRects[i].localScale = Vector3.one * Mathf.Lerp(1.15f, 1.4f, blink);
+                }
+                else
+                {
+                    // ดวงที่กำลังเล่นอยู่
+                    brainDotFills[i].color = baseColor;
+                    brainDotBorders[i].color = Color.white;
+                    float pulse = 1.28f + Mathf.Sin(Time.unscaledTime * 18f) * 0.06f;
+                    brainDotRects[i].localScale = Vector3.one * pulse;
+                }
+            }
+            else
+            {
+                // ดวงถัดไปที่กำลังจะมาถึง
+                bool preWarnNext = !brainInMicroGap && i == brainCurrentPhaseIndex + 1 && brainPhaseRemaining <= Mathf.Max(0.18f, brainwaveMicroGapDuration);
+                if (preWarnNext)
+                {
+                    float blink = 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 45f);
+                    brainDotFills[i].color = Color.Lerp(baseColor, Color.white, blink * 0.45f);
+                    brainDotBorders[i].color = Color.Lerp(new Color(0.08f, 0.1f, 0.14f, 0.95f), Color.white, blink);
+                    brainDotRects[i].localScale = Vector3.one * Mathf.Lerp(1.0f, 1.18f, blink);
+                }
+                else
+                {
+                    brainDotFills[i].color = new Color(baseColor.r, baseColor.g, baseColor.b, 0.9f);
+                    brainDotBorders[i].color = new Color(0.08f, 0.1f, 0.14f, 0.95f);
+                    brainDotRects[i].localScale = Vector3.one;
+                }
+            }
+        }
+    }
+
+    private TextMeshProUGUI CreateBrainCountdownText(Transform uiParent)
+    {
+        TextMeshProUGUI template = redCountText != null ? redCountText : blueTimerText;
+        GameObject textObj;
+        TextMeshProUGUI tmp;
+
+        if (template != null)
+        {
+            textObj = Instantiate(template.gameObject, uiParent);
+            textObj.name = "Alien Brainwave Countdown Text";
+            tmp = textObj.GetComponent<TextMeshProUGUI>();
+        }
+        else
+        {
+            textObj = new GameObject("Alien Brainwave Countdown Text", typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI));
+            textObj.transform.SetParent(uiParent, false);
+            tmp = textObj.GetComponent<TextMeshProUGUI>();
+        }
+
+        RectTransform rt = tmp.rectTransform;
+        rt.SetParent(uiParent, false);
+        rt.anchorMin = new Vector2(0.5f, 0.5f);
+        rt.anchorMax = new Vector2(0.5f, 0.5f);
+        rt.pivot = new Vector2(0.5f, 0.5f);
+        rt.anchoredPosition = new Vector2(0f, -155f);
+        rt.sizeDelta = new Vector2(400f, 160f);
+        rt.localScale = Vector3.one;
+
+        tmp.fontSize = 110f;
+        tmp.alignment = TextAlignmentOptions.Center;
+        tmp.enableAutoSizing = false;
+        tmp.textWrappingMode = TextWrappingModes.NoWrap;
+        tmp.overflowMode = TextOverflowModes.Overflow;
+        tmp.color = new Color(0.55f, 1f, 0.55f, 1f);
+        tmp.raycastTarget = false;
+        textObj.SetActive(true);
+        tmp.enabled = true;
+        return tmp;
+    }
+
+    private void UpdateBrainCountdownUI()
+    {
+        UpdateBrainSequenceDotsUI();
+        if (brainCountdownText == null) return;
+        int displayNum = Mathf.Clamp(Mathf.CeilToInt(brainCountdownRemaining), 1, 99);
+        brainCountdownText.text = displayNum.ToString();
+
+        float frac = brainCountdownRemaining - Mathf.Floor(brainCountdownRemaining);
+        float scale = 1f + Mathf.Sin(frac * Mathf.PI) * 0.2f;
+        brainCountdownText.rectTransform.localScale = Vector3.one * scale;
     }
 
     private void ReleaseBrainBlue()
@@ -194,22 +492,47 @@ public class PanicEventManagerVariantNoStop : MonoBehaviour
         blueBody = null;
     }
 
+    private void BeginBrainMicroGap(EventType upcomingType)
+    {
+        ReleaseBrainBlue();
+        brainInMicroGap = true;
+        brainMicroGapRemaining = Mathf.Clamp(brainwaveMicroGapDuration, 0.1f, 0.35f);
+        currentEvent = EventType.None;
+        if (player != null) player.SetInputLocked(true);
+
+        if (redUIContainer != null) redUIContainer.SetActive(false);
+        if (blueUIContainer != null) blueUIContainer.SetActive(false);
+        if (panicVignetteController != null)
+        {
+            panicVignetteController.SetVignetteColor(upcomingType == EventType.Red_Mash ? Color.red : new Color(0.2f, 0.55f, 1f));
+            panicVignetteController.SetVignetteActive(true);
+        }
+        TriggerContinuousShake(activeShakeAmplitude * 0.15f);
+        UpdateBrainSequenceDotsUI();
+    }
+
     private void SetBrainPhase(EventType type)
     {
         ReleaseBrainBlue();
+        brainInMicroGap = false;
+        brainMicroGapRemaining = 0f;
         currentState = EventState.Active;
         currentEvent = type;
         currentMashes = 0;
         targetMashes = 1;
-        // Every phase has enough time for a response; the last phase is never truncated.
-        brainPhaseDuration = brainRemaining <= 0.75f ? brainRemaining : Random.Range(0.4f, Mathf.Min(0.65f, brainRemaining - 0.4f));
+
+        // แต่ละช่วงย่อยมีเวลาคงที่ 1 วินาที (รวม 3 ช่วง = 3 วินาที)
+        brainPhaseDuration = Mathf.Max(0.1f, brainwaveSinglePhaseDuration);
         brainPhaseRemaining = brainPhaseDuration;
         stateTimer = brainPhaseDuration;
         currentBlueDuration = brainPhaseDuration;
+
         if (type == EventType.Blue_HoldOff) PrepareBluePlayer();
         else player.SetInputLocked(true);
+
         if (redUIContainer != null) redUIContainer.SetActive(type == EventType.Red_Mash);
         if (blueUIContainer != null) blueUIContainer.SetActive(type == EventType.Blue_HoldOff);
+
         if (type == EventType.Blue_HoldOff)
         {
             if (blueTimerText != null) { blueTimerText.gameObject.SetActive(true); blueTimerText.enabled = true; }
@@ -224,20 +547,81 @@ public class PanicEventManagerVariantNoStop : MonoBehaviour
             ? new Color(1f, 0.08f, 0.14f, 0.14f) : new Color(0.08f, 0.45f, 1f, 0.14f);
         TriggerContinuousShake(type == EventType.Red_Mash ? activeShakeAmplitude : activeShakeAmplitude * 0.12f);
         UpdateRedUI();
+        UpdateBrainSequenceDotsUI();
     }
 
     private void UpdateBrainwave()
     {
         if (Time.timeScale <= 0f) return;
         float dt = Time.unscaledDeltaTime;
-        brainRemaining = Mathf.Max(0f, brainRemaining - dt);
-        brainPhaseRemaining = Mathf.Max(0f, brainPhaseRemaining - dt);
-        stateTimer = brainPhaseRemaining;
+
+        if (brainCountingDown)
+        {
+            if (brainPortrait != null)
+            {
+                brainPortrait.rectTransform.anchoredPosition = new Vector2(Mathf.Sin(Time.unscaledTime * 35f) * 4f, 100f);
+                brainPortrait.color = Color.Lerp(Color.white, new Color(0.65f, 1f, 0.65f), 0.35f);
+            }
+
+            brainCountdownRemaining -= dt;
+            if (brainCountdownRemaining > 0f)
+            {
+                UpdateBrainCountdownUI();
+                return;
+            }
+
+            brainCountingDown = false;
+            if (brainCountdownText != null)
+            {
+                Destroy(brainCountdownText.gameObject);
+                brainCountdownText = null;
+            }
+
+            brainCurrentPhaseIndex = 0;
+            EventType firstPhase = (brainSequence != null && brainSequence.Length > 0)
+                ? brainSequence[0]
+                : (Random.value < 0.5f ? EventType.Red_Mash : EventType.Blue_HoldOff);
+            SetBrainPhase(firstPhase);
+            return;
+        }
+
         if (brainPortrait != null)
         {
             brainPortrait.rectTransform.anchoredPosition = new Vector2(Mathf.Sin(Time.unscaledTime * 45f) * 5f, 180f);
             brainPortrait.color = Color.Lerp(Color.white, new Color(0.65f, 1f, 0.65f), 0.35f);
         }
+
+        // จังหวะพักหายใจสั้น ๆ (Micro-Gap) พร้อมกระพริบเตือนสีถัดไปก่อนเริ่มช่วงใหม่
+        if (brainInMicroGap)
+        {
+            brainMicroGapRemaining -= dt;
+            EventType upcoming = (brainSequence != null && brainCurrentPhaseIndex < brainSequence.Length)
+                ? brainSequence[brainCurrentPhaseIndex]
+                : EventType.Red_Mash;
+
+            if (brainScreenTint != null)
+            {
+                float flash = 0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 55f);
+                Color baseTint = upcoming == EventType.Red_Mash
+                    ? new Color(1f, 0.08f, 0.14f, 0.22f)
+                    : new Color(0.08f, 0.45f, 1f, 0.22f);
+                brainScreenTint.color = new Color(baseTint.r, baseTint.g, baseTint.b, Mathf.Lerp(0.05f, 0.24f, flash));
+            }
+
+            UpdateBrainSequenceDotsUI();
+
+            if (brainMicroGapRemaining <= 0f)
+            {
+                SetBrainPhase(upcoming);
+            }
+            return;
+        }
+
+        brainRemaining = Mathf.Max(0f, brainRemaining - dt);
+        brainPhaseRemaining = Mathf.Max(0f, brainPhaseRemaining - dt);
+        stateTimer = brainPhaseRemaining;
+        UpdateBrainSequenceDotsUI();
+
         if (currentEvent == EventType.Red_Mash)
         {
             if (Input.GetMouseButtonDown(0) || Input.GetKeyDown(KeyCode.Space))
@@ -256,10 +640,24 @@ public class PanicEventManagerVariantNoStop : MonoBehaviour
             SubmitBlueInput(Input.GetMouseButton(0) || Input.GetKey(KeyCode.Space));
             if (!AlienBrainwaveActive) return;
         }
+
         if (brainPhaseRemaining > 0f) return;
         if (currentEvent == EventType.Red_Mash && currentMashes < targetMashes) { FailEvent(); return; }
-        if (brainRemaining <= 0.001f) { EndEvent(true); return; }
-        SetBrainPhase(currentEvent == EventType.Red_Mash ? EventType.Blue_HoldOff : EventType.Red_Mash);
+
+        brainCurrentPhaseIndex++;
+        int totalPhases = brainSequence != null ? brainSequence.Length : Mathf.Max(1, brainwavePhaseCount);
+        if (brainCurrentPhaseIndex >= totalPhases)
+        {
+            EndEvent(true);
+            return;
+        }
+
+        EventType nextPhase = (brainSequence != null && brainCurrentPhaseIndex < brainSequence.Length)
+            ? brainSequence[brainCurrentPhaseIndex]
+            : (Random.value < 0.5f ? EventType.Red_Mash : EventType.Blue_HoldOff);
+
+        // เข้าจังหวะพักหายใจสั้น ๆ (Micro-Gap) ก่อนเริ่มสีถัดไป
+        BeginBrainMicroGap(nextPhase);
     }
 
     private void BeginBlueSlowMotion()
@@ -426,6 +824,8 @@ public class PanicEventManagerVariantNoStop : MonoBehaviour
 
     void OnDestroy()
     {
+        if (brainCircleSprite != null && brainCircleSprite.texture != null)
+            Destroy(brainCircleSprite.texture);
         foreach (Sprite sprite in eventHudSprites)
             if (sprite != null) Destroy(sprite);
     }
@@ -477,7 +877,13 @@ public class PanicEventManagerVariantNoStop : MonoBehaviour
         // ทำงานเฉพาะตอนหมากฝรั่งอยู่ในสถานะ Normal เท่านั้น
         if (gum == null || gum.currentState != GumController.GumState.Normal)
         {
-            if (currentState != EventState.Idle) EndEvent(false);
+            if (currentState != EventState.Idle || AlienBrainwaveActive) EndEvent(false);
+            return;
+        }
+
+        if (AlienBrainwaveActive)
+        {
+            UpdateBrainwave();
             return;
         }
 
@@ -700,7 +1106,7 @@ public class PanicEventManagerVariantNoStop : MonoBehaviour
     {
         if (Time.timeScale <= 0f) return;
         // A collected reward takes priority over the blue drift constraint.
-        if (player != null && player.IsObstacleImmune) { EndEvent(true); return; }
+        if (player != null && player.RocketBoostTimeRemaining > 0f) { EndEvent(true); return; }
         stateTimer = Mathf.Max(0f, stateTimer - Time.unscaledDeltaTime);
         if (blueTimerText != null) blueTimerText.text = $"{stateTimer:0.0}s";
         if (blueProgressBar != null && currentBlueDuration > 0f)
@@ -736,6 +1142,17 @@ public class PanicEventManagerVariantNoStop : MonoBehaviour
     {
         bool endingBrain = AlienBrainwaveActive;
         AlienBrainwaveActive = false;
+        brainCountingDown = false;
+        brainInMicroGap = false;
+        brainMicroGapRemaining = 0f;
+        if (brainCountdownText != null) Destroy(brainCountdownText.gameObject);
+        brainCountdownText = null;
+        if (brainSequenceRoot != null) Destroy(brainSequenceRoot.gameObject);
+        brainSequenceRoot = null;
+        brainDotRects = null;
+        brainDotBorders = null;
+        brainDotFills = null;
+        brainSequence = null;
         if (brainPortrait != null) Destroy(brainPortrait.gameObject);
         brainPortrait = null;
         if (brainScreenTint != null) Destroy(brainScreenTint.gameObject);
@@ -770,6 +1187,12 @@ public class PanicEventManagerVariantNoStop : MonoBehaviour
         blueOwnsPlayer = false;
         blueBody = null;
         if (endingBrain && player != null) player.SetInputLocked(brainInputBefore);
+
+        if (success && player != null)
+        {
+            player.TryActivateEventImmunity();
+        }
+
         if (panicVignetteController != null) panicVignetteController.SetVignetteActive(false);
 
         StopCameraShake();

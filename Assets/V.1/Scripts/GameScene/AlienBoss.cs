@@ -78,8 +78,8 @@ public class AlienBoss : MonoBehaviour
     public float despawnAltitude = 2000f;
 
     [Header("Brainwave")]
-    public float minBrainwaveDuration = 1f;
-    public float maxBrainwaveDuration = 2.5f;
+    public float minBrainwaveDuration = 3f;
+    public float maxBrainwaveDuration = 3f;
     public float minBrainwaveCooldown = 12f;
     public float maxBrainwaveCooldown = 24f;
     private float brainwaveCooldown;
@@ -155,7 +155,7 @@ public class AlienBoss : MonoBehaviour
             transform.position = origin + Vector3.right * Mathf.Sin(Time.unscaledTime * 65f) * 0.065f;
             yield return null;
         }
-        float duration = Random.Range(Mathf.Clamp(minBrainwaveDuration, 1f, 2.5f), Mathf.Clamp(maxBrainwaveDuration, 1f, 2.5f));
+        float duration = 3.0f;
         if (brainwaveManager != null && brainwaveManager.TryStartAlienBrainwave(duration, alienRenderer != null ? alienRenderer.sprite : null, alienRenderer != null && alienRenderer.flipX))
         {
             while (brainwaveManager.AlienBrainwaveActive)

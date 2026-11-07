@@ -1,6 +1,7 @@
 using Unity.Cinemachine;
 using UnityEngine;
 using UnityEngine.UI; // 🔹 เพิ่มบรรทัดนี้เพื่อเรียกใช้ UI Image
+using TMPro;
 using System.Collections; // 🔹 เพิ่มบรรทัดนี้สำหรับ IEnumerator
 using System.Collections.Generic;
 
@@ -70,6 +71,35 @@ public class PlayerController : MonoBehaviour
     public float damageDuration = 3f; // ระยะเวลาจอดำและสั่น (3 วินาที)
     public float damageShakeAmplitude = 4f; // ความแรงของการสั่นตอนโดนชน
 
+    [Header("Event Immunity Settings")]
+    [Tooltip("ระยะเวลา Immunity หลังผ่าน Event แดง/ฟ้า (วินาที)")]
+    public float eventImmunityDuration = 1.0f;
+
+    [Tooltip("คูลดาวน์ของ Immunity หลังใช้งาน (วินาที)")]
+    public float eventImmunityCooldown = 15.0f;
+
+    [Tooltip("สีทองสำหรับขอบตัวละครและลูกโป่งตอนได้ Immunity")]
+    public Color immunityGoldColor = new Color(1f, 0.8431373f, 0f, 1f);
+
+    [Tooltip("ความหนาของขอบสีทองรอบตัวละครตอนได้ Immunity")]
+    public float playerOutlineThickness = 0.06f;
+
+    [Header("Player Body Hit Penalty")]
+    [Tooltip("ระยะเวลาเป่าช้าลงและบินช้าลงเมื่อโดนชนที่ตัว Player (วินาที)")]
+    public float bodyHitSlowDuration = 2f;
+
+    [Tooltip("ตัวคูณความเร็วในการเป่าหมากฝรั่งระหว่างติดสถานะ (0.5 = เป่าช้าลงครึ่งหนึ่ง)")]
+    [Range(0.1f, 1f)]
+    public float bodyHitBlowSpeedMultiplier = 0.5f;
+
+    [Tooltip("ตัวคูณแรงยก/ความเร็วบินระหว่างติดสถานะ (0.5 = บินช้าลงครึ่งหนึ่ง)")]
+    [Range(0.1f, 1f)]
+    public float bodyHitLiftMultiplier = 0.5f;
+
+    private float bodyHitSlowTimer;
+    public bool IsBodyHitSlowed => bodyHitSlowTimer > 0f && !IsObstacleImmune;
+    public float BodyHitSlowTimeRemaining => IsBodyHitSlowed ? bodyHitSlowTimer : 0f;
+
     private bool isDamageShaking = false; // เอาไว้กันไม่ให้สั่นตีกับตอนตกลงมา
 
     private CinemachineBasicMultiChannelPerlin noiseComponent;
@@ -84,6 +114,19 @@ public class PlayerController : MonoBehaviour
     private Coroutine rocketBoostCoroutine;
     public float RocketBoostTimeRemaining { get; private set; }
 
+    // สถานะ Immunity หลังผ่าน Event แดง/ฟ้า
+    private bool eventImmunityActive;
+    private float nextEventImmunityAvailableTime = -999f;
+    private Coroutine eventImmunityCoroutine;
+    public float ImmunityTimeRemaining { get; private set; }
+    public bool IsEventImmune => eventImmunityActive;
+
+    private SpriteRenderer playerSpriteRenderer;
+    private GameObject outlineRoot;
+    private readonly List<SpriteRenderer> outlineRenderers = new List<SpriteRenderer>();
+    private Material outlineMaterial;
+    private TextMeshProUGUI immunityStatusText;
+
     // สถานะพิเศษจากภายนอก เช่น Panic Event Blue (ห้ามกด)
     private bool inputLocked;
 
@@ -94,6 +137,7 @@ public class PlayerController : MonoBehaviour
     {
         rb = GetComponent<Rigidbody2D>();
         defaultGravityScale = rb.gravityScale;
+        playerSpriteRenderer = GetComponent<SpriteRenderer>();
 
         if (vcam == null) vcam = FindAnyObjectByType<CinemachineCamera>();
         if (vcam != null)
@@ -101,6 +145,7 @@ public class PlayerController : MonoBehaviour
             noiseComponent = vcam.GetComponent<CinemachineBasicMultiChannelPerlin>();
         }
 
+        BuildGoldOutline();
     }
 
     void Start()
@@ -113,6 +158,16 @@ public class PlayerController : MonoBehaviour
         {
             Debug.LogWarning("[PlayerController] ยังไม่ได้ผูก GumController ใน Inspector");
         }
+
+        EnsureImmunityStatusText();
+    }
+
+    void OnDestroy()
+    {
+        if (outlineMaterial != null)
+        {
+            Destroy(outlineMaterial);
+        }
     }
 
     void Update()
@@ -124,11 +179,23 @@ public class PlayerController : MonoBehaviour
 
         UpdateGumFromInput();
         HandleMaxFallShake();
+        UpdateImmunityUI();
+
+        if (bodyHitSlowTimer > 0f)
+        {
+            bodyHitSlowTimer = Mathf.Max(0f, bodyHitSlowTimer - Time.deltaTime);
+        }
+
         if (rb != null)
         {
             debugVelocityY = rb.linearVelocity.y; // Unity 6 / 2023.3+ ใช้ linearVelocity (หากใช้ Unity เวอร์ชันเก่ากว่าให้เปลี่ยนเป็น rb.velocity.y)
             debugGravityScale = rb.gravityScale;
         }
+    }
+
+    void LateUpdate()
+    {
+        UpdateGoldOutlineVisual();
     }
 
     void FixedUpdate()
@@ -178,7 +245,213 @@ public class PlayerController : MonoBehaviour
         inputLocked = locked;
     }
 
-    public bool IsObstacleImmune => rocketBoostActive;
+    public bool IsObstacleImmune => rocketBoostActive || eventImmunityActive;
+
+    /// <summary>
+    /// เรียกเมื่อผ่าน Event แดง/ฟ้า สำเร็จ เพื่อเปิดใช้งาน Immunity 1 วินาที (คูลดาวน์ 15 วินาที)
+    /// </summary>
+    public bool TryActivateEventImmunity()
+    {
+        if (Time.time < nextEventImmunityAvailableTime)
+        {
+            return false;
+        }
+
+        nextEventImmunityAvailableTime = Time.time + Mathf.Max(0f, eventImmunityCooldown);
+
+        if (eventImmunityCoroutine != null)
+        {
+            StopCoroutine(eventImmunityCoroutine);
+        }
+
+        eventImmunityCoroutine = StartCoroutine(EventImmunityRoutine(Mathf.Max(0.1f, eventImmunityDuration)));
+        return true;
+    }
+
+    private IEnumerator EventImmunityRoutine(float duration)
+    {
+        eventImmunityActive = true;
+        ImmunityTimeRemaining = duration;
+
+        if (gum != null)
+        {
+            gum.SetGoldImmunityVisual(true, immunityGoldColor);
+        }
+        UpdateGoldOutlineVisual();
+        UpdateImmunityUI();
+
+        float timer = 0f;
+        while (timer < duration)
+        {
+            timer += Time.deltaTime;
+            ImmunityTimeRemaining = Mathf.Max(0f, duration - timer);
+            yield return null;
+        }
+
+        eventImmunityActive = false;
+        ImmunityTimeRemaining = 0f;
+        eventImmunityCoroutine = null;
+
+        if (gum != null)
+        {
+            gum.SetGoldImmunityVisual(false, immunityGoldColor);
+        }
+        UpdateGoldOutlineVisual();
+        UpdateImmunityUI();
+    }
+
+    private void BuildGoldOutline()
+    {
+        if (playerSpriteRenderer == null) return;
+
+        Shader solidShader = Shader.Find("GUI/Text Shader");
+        if (solidShader == null) solidShader = Shader.Find("Sprites/Default");
+        if (solidShader != null)
+        {
+            outlineMaterial = new Material(solidShader);
+        }
+
+        outlineRoot = new GameObject("PlayerGoldOutline");
+        outlineRoot.transform.SetParent(transform, false);
+        outlineRoot.transform.localPosition = Vector3.zero;
+        outlineRoot.transform.localRotation = Quaternion.identity;
+        outlineRoot.transform.localScale = Vector3.one;
+
+        Vector2[] dirs = new Vector2[]
+        {
+            new Vector2(1f, 0f),
+            new Vector2(-1f, 0f),
+            new Vector2(0f, 1f),
+            new Vector2(0f, -1f),
+            new Vector2(0.7071f, 0.7071f),
+            new Vector2(-0.7071f, 0.7071f),
+            new Vector2(0.7071f, -0.7071f),
+            new Vector2(-0.7071f, -0.7071f)
+        };
+
+        for (int i = 0; i < dirs.Length; i++)
+        {
+            GameObject child = new GameObject($"Outline_{i}");
+            child.transform.SetParent(outlineRoot.transform, false);
+            child.transform.localPosition = new Vector3(
+                dirs[i].x * playerOutlineThickness,
+                dirs[i].y * playerOutlineThickness,
+                0f);
+
+            SpriteRenderer sr = child.AddComponent<SpriteRenderer>();
+            if (outlineMaterial != null) sr.sharedMaterial = outlineMaterial;
+            sr.color = immunityGoldColor;
+            sr.sortingLayerID = playerSpriteRenderer.sortingLayerID;
+            sr.sortingOrder = playerSpriteRenderer.sortingOrder - 1;
+            outlineRenderers.Add(sr);
+        }
+
+        outlineRoot.SetActive(false);
+    }
+
+    private void UpdateGoldOutlineVisual()
+    {
+        if (outlineRoot == null || playerSpriteRenderer == null) return;
+
+        if (outlineRoot.activeSelf != eventImmunityActive)
+        {
+            outlineRoot.SetActive(eventImmunityActive);
+        }
+
+        if (!eventImmunityActive) return;
+
+        Vector2[] dirs = new Vector2[]
+        {
+            new Vector2(1f, 0f),
+            new Vector2(-1f, 0f),
+            new Vector2(0f, 1f),
+            new Vector2(0f, -1f),
+            new Vector2(0.7071f, 0.7071f),
+            new Vector2(-0.7071f, 0.7071f),
+            new Vector2(0.7071f, -0.7071f),
+            new Vector2(-0.7071f, -0.7071f)
+        };
+
+        for (int i = 0; i < outlineRenderers.Count; i++)
+        {
+            SpriteRenderer sr = outlineRenderers[i];
+            if (sr == null) continue;
+            sr.sprite = playerSpriteRenderer.sprite;
+            sr.flipX = playerSpriteRenderer.flipX;
+            sr.flipY = playerSpriteRenderer.flipY;
+            sr.color = immunityGoldColor;
+            sr.sortingLayerID = playerSpriteRenderer.sortingLayerID;
+            sr.sortingOrder = playerSpriteRenderer.sortingOrder - 1;
+            sr.transform.localPosition = new Vector3(
+                dirs[i].x * playerOutlineThickness,
+                dirs[i].y * playerOutlineThickness,
+                0f);
+        }
+    }
+
+    private void EnsureImmunityStatusText()
+    {
+        if (immunityStatusText != null) return;
+
+        TextMeshProUGUI template = null;
+        RocketBoostUI boostUI = FindAnyObjectByType<RocketBoostUI>();
+        if (boostUI != null && boostUI.boostText != null)
+        {
+            template = boostUI.boostText;
+        }
+        else
+        {
+            GumRecoveryUI recoveryUI = FindAnyObjectByType<GumRecoveryUI>();
+            if (recoveryUI != null && recoveryUI.recoveryText != null)
+            {
+                template = recoveryUI.recoveryText;
+            }
+        }
+
+        if (template == null) return;
+
+        Transform parent = template.transform.parent;
+        GameObject textObj = Instantiate(template.gameObject, parent);
+        textObj.name = "Immunity Status Text";
+        immunityStatusText = textObj.GetComponent<TextMeshProUGUI>();
+
+        RectTransform rt = immunityStatusText.rectTransform;
+        rt.anchorMin = new Vector2(0.5f, 1f);
+        rt.anchorMax = new Vector2(0.5f, 1f);
+        rt.pivot = new Vector2(0.5f, 1f);
+        rt.anchoredPosition = new Vector2(0f, -90f);
+        rt.sizeDelta = new Vector2(600f, 60f);
+        rt.localScale = Vector3.one;
+
+        immunityStatusText.fontSize = 60f;
+        immunityStatusText.alignment = TextAlignmentOptions.Center;
+        immunityStatusText.textWrappingMode = TextWrappingModes.NoWrap;
+        immunityStatusText.overflowMode = TextOverflowModes.Overflow;
+        immunityStatusText.color = immunityGoldColor;
+        immunityStatusText.raycastTarget = false;
+        textObj.SetActive(false);
+    }
+
+    private void UpdateImmunityUI()
+    {
+        if (immunityStatusText == null)
+        {
+            if (eventImmunityActive) EnsureImmunityStatusText();
+            if (immunityStatusText == null) return;
+        }
+
+        bool show = eventImmunityActive && ImmunityTimeRemaining > 0f;
+        if (immunityStatusText.gameObject.activeSelf != show)
+        {
+            immunityStatusText.gameObject.SetActive(show);
+        }
+
+        if (show)
+        {
+            immunityStatusText.color = immunityGoldColor;
+            immunityStatusText.text = $"Immunity {ImmunityTimeRemaining:0.0}s";
+        }
+    }
 
     public void StartRocketBoost(float height = 50f, float duration = 2.5f)
     {
@@ -222,7 +495,8 @@ public class PlayerController : MonoBehaviour
 
         if (effectiveBlow)
         {
-            gum.Grow(Time.deltaTime);
+            float blowMultiplier = IsBodyHitSlowed ? bodyHitBlowSpeedMultiplier : 1f;
+            gum.Grow(Time.deltaTime * blowMultiplier);
         }
         else
         {
@@ -255,6 +529,11 @@ public class PlayerController : MonoBehaviour
 
             liftMultiplier *= SmokeLiftMultiplier;
 
+            if (IsBodyHitSlowed)
+            {
+                liftMultiplier *= bodyHitLiftMultiplier;
+            }
+
             float targetVelocityY = baseLiftForce * liftMultiplier;
 
             // ไล่ velocity เข้าหาเป้าหมายทีละนิด แทนการ snap ทันที
@@ -275,6 +554,8 @@ public class PlayerController : MonoBehaviour
     {
         get
         {
+            if (IsObstacleImmune) return 1f;
+
             float multiplier = 1f;
             for (int i = 0; i < smokeLiftMultipliers.Count; i++)
             {
@@ -379,7 +660,14 @@ public class PlayerController : MonoBehaviour
     /// <summary>เรียกตอนโดน hitbox ตัว player (ไม่ใช่ hitbox gum)</summary>
     public void OnHitByObstacleBody()
     {
-        gum?.TriggerDazed();
+        if (IsObstacleImmune) return;
+
+        bodyHitSlowTimer = bodyHitSlowDuration;
+
+        if (gum != null && gum.currentState == GumController.GumState.Normal)
+        {
+            gum.currentSize = 0f;
+        }
 
         // เริ่มแสดงเอฟเฟกต์จอดำและสั่น — หยุด Coroutine เดิมก่อน กันชนซ้ำเร็ว ๆ แล้ว Effect ซ้อนกัน
         if (damageFeedbackCoroutine != null)
