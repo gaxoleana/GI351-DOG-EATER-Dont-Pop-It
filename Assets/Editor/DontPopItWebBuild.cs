@@ -14,6 +14,27 @@ namespace DontPopIt.Editor
     public static class DontPopItWebBuild
     {
         public const string Template = "PROJECT:PortraitMinimal";
+        public const string ProfilePath = "Assets/Settings/Build Profiles/Itch.io 9x16 Native.asset";
+        public const int ReferenceWidth = 1080;
+        public const int ReferenceHeight = 1920;
+
+        [MenuItem("Tools/Don't Pop It/Select itch.io 9x16 Native Profile")]
+        public static void SelectProfile()
+        {
+            if (EditorApplication.isPlayingOrWillChangePlaymode)
+                throw new InvalidOperationException("Stop Play mode before changing build profiles.");
+            BuildProfile profile = LoadProfile();
+            BuildProfile.SetActiveBuildProfile(profile);
+            Selection.activeObject = profile;
+            EditorGUIUtility.PingObject(profile);
+        }
+
+        private static BuildProfile LoadProfile()
+        {
+            BuildProfile profile = AssetDatabase.LoadAssetAtPath<BuildProfile>(ProfilePath);
+            if (profile == null) throw new InvalidOperationException("Missing itch.io build profile: " + ProfilePath);
+            return profile;
+        }
 
         [MenuItem("Tools/Don't Pop It/Build itch.io Web Release")]
         public static void BuildRelease()
@@ -25,18 +46,19 @@ namespace DontPopIt.Editor
                     throw new InvalidOperationException("Save open scene edits before building.");
             if (!BuildPipeline.IsBuildTargetSupported(BuildTargetGroup.WebGL, BuildTarget.WebGL))
                 throw new InvalidOperationException("Install Web Build Support for this Unity Editor in Unity Hub.");
+            if (EditorUserBuildSettings.activeBuildTarget != BuildTarget.WebGL)
+                throw new InvalidOperationException("Select the itch.io 9x16 Native profile and wait for the Web platform switch before building.");
 
-            string[] scenes = EditorBuildSettings.scenes.Where(scene => scene.enabled).Select(scene => scene.path).ToArray();
+            BuildProfile profile = LoadProfile();
+            if (!profile.overrideGlobalScenes)
+                throw new InvalidOperationException("The itch.io profile must use its own MainMenuV.1 and GameSceneV.1 scene list.");
+            string[] scenes = profile.scenes.Where(scene => scene.enabled).Select(scene => scene.path).ToArray();
             if (!scenes.SequenceEqual(new[]
                 {
                     "Assets/V.1/Scene/MainMenuV.1.unity",
                     "Assets/V.1/Scene/GameSceneV.1.unity"
                 }) || scenes.Any(scene => !File.Exists(scene)))
-                throw new InvalidOperationException("Build Settings must contain MainMenuV.1 followed by GameSceneV.1.");
-
-            // Use the same explicit release settings as Chain Reaction's web build.
-            BuildProfile.SetActiveBuildProfile(null);
-            Configure();
+                throw new InvalidOperationException("The itch.io profile must contain MainMenuV.1 followed by GameSceneV.1.");
 
             string project = Directory.GetParent(Application.dataPath).FullName;
             string outputRoot = Environment.GetEnvironmentVariable("DONTPOPIT_WEB_OUTPUT_ROOT");
@@ -44,10 +66,9 @@ namespace DontPopIt.Editor
             outputRoot = Path.GetFullPath(outputRoot);
             string output = Path.Combine(outputRoot, "DontPopIt-Web-" + DateTime.UtcNow.ToString("yyyyMMdd-HHmmss"));
             Directory.CreateDirectory(output);
-            BuildReport report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
+            BuildReport report = BuildPipeline.BuildPlayer(new BuildPlayerWithProfileOptions
             {
-                scenes = scenes,
-                target = BuildTarget.WebGL,
+                buildProfile = profile,
                 locationPathName = output,
                 options = BuildOptions.None
             });
@@ -61,8 +82,8 @@ namespace DontPopIt.Editor
             var receipt = new Receipt
             {
                 buildFolder = output, zip = archive, unity = Application.unityVersion,
-                width = 1080, height = 1920, sceneCount = scenes.Length,
-                developmentBuild = false, bytes = new FileInfo(archive).Length,
+                buildProfile = ProfilePath, width = ReferenceWidth, height = ReferenceHeight, sceneCount = scenes.Length,
+                developmentBuild = false, nativeDisplayResolution = true, bytes = new FileInfo(archive).Length,
                 errors = report.summary.totalErrors, warnings = report.summary.totalWarnings,
                 buildSeconds = report.summary.totalTime.TotalSeconds
             };
@@ -75,8 +96,8 @@ namespace DontPopIt.Editor
             EditorUserBuildSettings.development = false;
             EditorUserBuildSettings.allowDebugging = false;
             EditorUserBuildSettings.connectProfiler = false;
-            PlayerSettings.defaultWebScreenWidth = 1080;
-            PlayerSettings.defaultWebScreenHeight = 1920;
+            PlayerSettings.defaultWebScreenWidth = ReferenceWidth;
+            PlayerSettings.defaultWebScreenHeight = ReferenceHeight;
             PlayerSettings.WebGL.template = Template;
             PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Gzip;
             PlayerSettings.WebGL.decompressionFallback = false;
@@ -91,9 +112,9 @@ namespace DontPopIt.Editor
         [Serializable]
         private sealed class Receipt
         {
-            public string buildFolder, zip, unity;
+            public string buildFolder, zip, unity, buildProfile;
             public int width, height, sceneCount;
-            public bool developmentBuild;
+            public bool developmentBuild, nativeDisplayResolution;
             public long bytes;
             public int errors, warnings;
             public double buildSeconds;

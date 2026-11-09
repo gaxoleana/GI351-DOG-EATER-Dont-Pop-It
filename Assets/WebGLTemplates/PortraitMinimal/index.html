@@ -52,11 +52,8 @@
       const gameWidth = gameHeight * 9 / 16;
       frame.style.width = gameWidth + "px";
       frame.style.height = gameHeight + "px";
-      const pixelRatio = Math.min(window.devicePixelRatio || 1, 1920 / gameHeight);
-      const renderWidth = Math.max(1, Math.round(gameWidth * pixelRatio));
-      const renderHeight = Math.max(1, Math.round(gameHeight * pixelRatio));
-      if (canvas.width !== renderWidth) canvas.width = renderWidth;
-      if (canvas.height !== renderHeight) canvas.height = renderHeight;
+      // Unity owns the drawing buffer and follows the browser's current DPR.
+      // 1080x1920 is the reference size, not a render-resolution ceiling.
     }
     resizeGame();
     new ResizeObserver(resizeGame).observe(container);
@@ -68,15 +65,24 @@
 
     const currentFullscreen = () => document.fullscreenElement || document.webkitFullscreenElement;
     fullscreen.hidden = !(container.requestFullscreen || container.webkitRequestFullscreen);
-    fullscreen.addEventListener("click", () => {
-      const action = currentFullscreen()
-        ? (document.exitFullscreen || document.webkitExitFullscreen).call(document)
-        : (container.requestFullscreen || container.webkitRequestFullscreen).call(container);
-      Promise.resolve(action).catch(() => { fullscreen.title = "Use the itch.io fullscreen button"; });
+    fullscreen.addEventListener("click", async () => {
+      try {
+        if (currentFullscreen()) {
+          await (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+        } else {
+          await (container.requestFullscreen || container.webkitRequestFullscreen).call(container);
+        }
+        canvas.focus({ preventScroll: true });
+      } catch {
+        fullscreen.title = "Use the itch.io fullscreen button";
+      }
     });
     function fullscreenChanged() {
-      fullscreen.setAttribute("aria-label", currentFullscreen() ? "Exit fullscreen" : "Enter fullscreen");
+      const active = Boolean(currentFullscreen());
+      fullscreen.setAttribute("aria-label", active ? "Exit fullscreen" : "Enter fullscreen");
+      fullscreen.title = active ? "Exit fullscreen" : "Fullscreen";
       resizeGame();
+      requestAnimationFrame(resizeGame);
     }
     document.addEventListener("fullscreenchange", fullscreenChanged);
     document.addEventListener("webkitfullscreenchange", fullscreenChanged);
@@ -103,8 +109,8 @@
       companyName: {{{ JSON.stringify(COMPANY_NAME) }}},
       productName: {{{ JSON.stringify(PRODUCT_NAME) }}},
       productVersion: {{{ JSON.stringify(PRODUCT_VERSION) }}},
-      matchWebGLToCanvasSize: false,
-      devicePixelRatio: 1,
+      // Automatic CSS-to-device-pixel matching also tracks DPI/monitor changes.
+      matchWebGLToCanvasSize: true,
       showBanner: (message, type) => { if (type === "error") showError(message); else console.warn(message); }
     }, progress => { document.getElementById("progress").value = progress; }).then(instance => {
       window.unityInstance = instance;

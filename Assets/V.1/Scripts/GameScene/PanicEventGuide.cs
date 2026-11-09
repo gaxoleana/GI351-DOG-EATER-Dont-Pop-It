@@ -1,6 +1,9 @@
 using TMPro;
+using System.Collections.Generic;
+using System.Text;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.TextCore;
 using UnityEngine.UI;
 
 /// <summary>A two-page introduction to both panic variants, shown once per run.</summary>
@@ -239,6 +242,7 @@ public sealed class PanicEventGuide : MonoBehaviour
         {
             languageLabel.font = artwork.thaiFont;
             languageLabel.fontSharedMaterial = thaiReadableMaterial;
+            EnableThaiMarkPositioning(languageLabel);
         }
         languageLabel.text = "[ภาษาไทย]";
         languageLabel.color = new Color(0.07f, 0.13f, 0.17f);
@@ -328,7 +332,7 @@ public sealed class PanicEventGuide : MonoBehaviour
                     break;
             }
             if (english == null) continue;
-            label.text = thai ? translated : english;
+            label.text = thai ? PrepareThaiText(translated) : english;
             label.enableAutoSizing = thai;
             label.fontSizeMax = label.name == "Action" ? 72f : label.name == "Instructions" ? 56f : label.name == "Tip" ? 46f : label.name == "Paused" ? 40f : label.name == "Page Number" ? 32f : language ? 36f : 64f;
             label.fontSizeMin = label.fontSizeMax * 0.65f;
@@ -341,6 +345,7 @@ public sealed class PanicEventGuide : MonoBehaviour
             {
                 label.font = artwork.thaiFont;
                 label.fontSharedMaterial = readable || language ? thaiReadableMaterial : thaiOutlinedMaterial;
+                EnableThaiMarkPositioning(label);
             }
             else
             {
@@ -348,6 +353,36 @@ public sealed class PanicEventGuide : MonoBehaviour
                 label.fontSharedMaterial = readable ? readableTextMaterial : menuMaterial;
             }
         }
+    }
+
+    private static void EnableThaiMarkPositioning(TextMeshProUGUI label)
+    {
+        var features = new List<OTL_FeatureTag>(label.fontFeatures);
+        if (!features.Contains(OTL_FeatureTag.mark)) features.Add(OTL_FeatureTag.mark);
+        if (!features.Contains(OTL_FeatureTag.mkmk)) features.Add(OTL_FeatureTag.mkmk);
+        label.fontFeatures = features;
+    }
+
+    private static string PrepareThaiText(string text)
+    {
+        // TMP positions combining marks but does not shape Sara Am. Split it into
+        // Nikhahit + Sara Aa, placing Nikhahit before a preceding tone mark (ซ้ำ).
+        var result = new StringBuilder(text.Length);
+        foreach (char character in text)
+        {
+            if (character != '\u0E33')
+            {
+                result.Append(character);
+                continue;
+            }
+
+            int insertion = result.Length;
+            while (insertion > 0 && result[insertion - 1] >= '\u0E48' && result[insertion - 1] <= '\u0E4B')
+                insertion--;
+            result.Insert(insertion, '\u0E4D');
+            result.Append('\u0E32');
+        }
+        return result.ToString();
     }
 
     private static Color ActionColor(bool red)
