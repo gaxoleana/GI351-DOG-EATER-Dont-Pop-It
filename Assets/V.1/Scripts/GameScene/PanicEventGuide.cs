@@ -18,6 +18,16 @@ public sealed class PanicEventGuide : MonoBehaviour
     private bool hasReadGuide;
     private int openedFrame;
     private Material readableTextMaterial;
+    private PanicGuideAssets artwork;
+    private bool thai;
+    private TMP_FontAsset menuFont;
+    private Material menuMaterial;
+    private Material thaiOutlinedMaterial;
+    private Material thaiReadableMaterial;
+    private RawImage blurredBackdrop;
+    private RenderTexture backdropTexture;
+    private Material blurMaterial;
+    private Coroutine captureRoutine;
 
     public bool IsOpen { get; private set; }
 
@@ -32,15 +42,33 @@ public sealed class PanicEventGuide : MonoBehaviour
         Stretch(root.GetComponent<RectTransform>());
 
         var guide = root.GetComponent<PanicEventGuide>();
+        guide.artwork = Resources.Load<PanicGuideAssets>("PanicGuideAssets");
+        guide.menuFont = menuFontTemplate.font;
+        guide.menuMaterial = menuFontTemplate.fontSharedMaterial;
         guide.guideCanvas = root.GetComponent<Canvas>();
         guide.guideCanvas.overrideSorting = true;
         guide.guideCanvas.sortingOrder = 30000;
         guide.raycaster = root.GetComponent<GraphicRaycaster>();
+        var blurObject = new GameObject("Blurred Background", typeof(RectTransform), typeof(CanvasRenderer), typeof(RawImage));
+        blurObject.transform.SetParent(root.transform, false);
+        blurObject.layer = root.layer;
+        guide.blurredBackdrop = blurObject.GetComponent<RawImage>();
+        guide.blurredBackdrop.raycastTarget = false;
+        Stretch(guide.blurredBackdrop.rectTransform);
         // Keep the menu font while giving small copy a solid, high-contrast face.
         guide.readableTextMaterial = new Material(menuFontTemplate.fontSharedMaterial);
         guide.readableTextMaterial.name = "Panic Guide Readable Text";
         guide.readableTextMaterial.SetFloat(ShaderUtilities.ID_OutlineWidth, 0f);
         guide.readableTextMaterial.SetFloat(ShaderUtilities.ID_FaceDilate, 0.05f);
+        if (guide.artwork != null && guide.artwork.thaiFont != null)
+        {
+            guide.thaiOutlinedMaterial = guide.CreateThaiMaterial(menuFontTemplate.font.material);
+            guide.thaiOutlinedMaterial.SetFloat(ShaderUtilities.ID_OutlineWidth, 0.32f);
+            guide.thaiOutlinedMaterial.SetFloat(ShaderUtilities.ID_FaceDilate, 0.12f);
+            guide.thaiOutlinedMaterial.SetFloat("_OutlineSoftness", 0f);
+            guide.thaiOutlinedMaterial.SetColor("_OutlineColor", Color.black);
+            guide.thaiReadableMaterial = guide.CreateThaiMaterial(guide.readableTextMaterial);
+        }
 
         Image backdrop = CreateImage("Input Blocker", root.transform, null, new Color(0.04f, 0.09f, 0.14f, 0.78f));
         Stretch(backdrop.rectTransform);
@@ -65,7 +93,40 @@ public sealed class PanicEventGuide : MonoBehaviour
         ShowPage(false);
         guideCanvas.enabled = true;
         raycaster.enabled = true;
+        captureRoutine = StartCoroutine(CaptureBlurredBackdrop());
         return true;
+    }
+
+    private System.Collections.IEnumerator CaptureBlurredBackdrop()
+    {
+        // Capture the complete scene and HUD without the guide itself.
+        guideCanvas.enabled = false;
+        yield return new WaitForEndOfFrame();
+        if (!IsOpen) yield break;
+        var shader = Resources.Load<Shader>("PanicGuideBackdropBlur");
+        if (shader != null)
+        {
+            if (blurMaterial == null) blurMaterial = new Material(shader);
+            var screenshot = ScreenCapture.CaptureScreenshotAsTexture();
+            int width = Mathf.Max(1, Screen.width / 4);
+            int height = Mathf.Max(1, Screen.height / 4);
+            if (backdropTexture != null) { backdropTexture.Release(); Destroy(backdropTexture); }
+            backdropTexture = new RenderTexture(width, height, 0) { filterMode = FilterMode.Bilinear };
+            var temporary = RenderTexture.GetTemporary(width, height, 0);
+            Graphics.Blit(screenshot, backdropTexture);
+            for (int i = 0; i < 3; i++)
+            {
+                blurMaterial.SetVector("_Direction", new Vector4(2f / width, 0f, 0f, 0f));
+                Graphics.Blit(backdropTexture, temporary, blurMaterial);
+                blurMaterial.SetVector("_Direction", new Vector4(0f, 2f / height, 0f, 0f));
+                Graphics.Blit(temporary, backdropTexture, blurMaterial);
+            }
+            RenderTexture.ReleaseTemporary(temporary);
+            Destroy(screenshot);
+            blurredBackdrop.texture = backdropTexture;
+        }
+        guideCanvas.enabled = true;
+        captureRoutine = null;
     }
 
     private void Update()
@@ -120,6 +181,7 @@ public sealed class PanicEventGuide : MonoBehaviour
 
     public void Hide()
     {
+        if (captureRoutine != null) { StopCoroutine(captureRoutine); captureRoutine = null; }
         IsOpen = false;
         navigationReady = false;
         if (redPanel != null) redPanel.SetActive(false);
@@ -136,6 +198,23 @@ public sealed class PanicEventGuide : MonoBehaviour
     private void OnDestroy()
     {
         if (readableTextMaterial != null) Destroy(readableTextMaterial);
+        if (thaiOutlinedMaterial != null) Destroy(thaiOutlinedMaterial);
+        if (thaiReadableMaterial != null) Destroy(thaiReadableMaterial);
+        if (blurMaterial != null) Destroy(blurMaterial);
+        if (backdropTexture != null) { backdropTexture.Release(); Destroy(backdropTexture); }
+    }
+
+    private Material CreateThaiMaterial(Material style)
+    {
+        // Keep the Thai atlas and SDF metrics, while matching the game's face and outline.
+        var material = new Material(artwork.thaiFont.material);
+        material.shader = style.shader;
+        material.shaderKeywords = style.shaderKeywords;
+        foreach (string property in new[] { "_FaceDilate", "_OutlineWidth", "_OutlineSoftness" })
+            if (style.HasProperty(property)) material.SetFloat(property, style.GetFloat(property));
+        foreach (string property in new[] { "_FaceColor", "_OutlineColor" })
+            if (style.HasProperty(property)) material.SetColor(property, style.GetColor(property));
+        return material;
     }
 
     private GameObject CreatePanel(bool red, TextMeshProUGUI fontTemplate, Sprite panelSprite,
@@ -146,23 +225,38 @@ public sealed class PanicEventGuide : MonoBehaviour
         Place(panel.rectTransform, Vector2.zero, new Vector2(900f, 1020f));
         AddOutline(panel.gameObject, 3f);
         CreateText("Page Number", panel.transform, fontTemplate, red ? "PANIC EVENTS   1 / 2" : "PANIC EVENTS   2 / 2",
-            36f, new Vector2(0f, 465f), new Vector2(790f, 50f), true);
+            32f, new Vector2(-150f, 465f), new Vector2(480f, 50f), true);
 
-        Color accent = red ? new Color(0.86f, 0.19f, 0.25f) : new Color(0.12f, 0.49f, 0.83f);
-        Image heading = CreateImage("Event Color", panel.transform, buttonSprite, accent);
-        Place(heading.rectTransform, new Vector2(0f, 370f), new Vector2(770f, 120f));
+        Button language = CreateButton("Language", panel.transform, fontTemplate, buttonSprite, new Vector2(275f, 465f));
+        Place(language.GetComponent<RectTransform>(), new Vector2(275f, 465f), new Vector2(260f, 64f));
+        var languageOutline = language.GetComponent<Outline>();
+        languageOutline.effectColor = Color.white;
+        var languageLabel = language.GetComponentInChildren<TextMeshProUGUI>();
+        Place(languageLabel.rectTransform, Vector2.zero, new Vector2(240f, 60f));
+        languageLabel.fontSize = 36f;
+        languageLabel.color = new Color(0.07f, 0.13f, 0.17f);
+        if (artwork != null && artwork.thaiFont != null)
+        {
+            languageLabel.font = artwork.thaiFont;
+            languageLabel.fontSharedMaterial = thaiReadableMaterial;
+        }
+        languageLabel.text = "[ภาษาไทย]";
+        languageLabel.color = new Color(0.07f, 0.13f, 0.17f);
+        language.onClick.AddListener(ToggleLanguage);
+        Image heading = CreateImage("Event Expression", panel.transform,
+            artwork != null ? (red ? artwork.shock : artwork.relax) : null, Color.white);
+        heading.type = Image.Type.Simple;
+        heading.preserveAspect = true;
+        Place(heading.rectTransform, new Vector2(0f, 325f), new Vector2(500f, 200f));
         heading.raycastTarget = false;
-        AddOutline(heading.gameObject, 3f);
-        CreateText("Event Name", heading.transform, fontTemplate, red ? "RED PANIC" : "BLUE PANIC",
-            66f, Vector2.zero, new Vector2(730f, 110f));
-
         CreateText("Action", panel.transform, fontTemplate, red ? "CLICK FAST!" : "HANDS OFF!",
-            82f, new Vector2(0f, 225f), new Vector2(800f, 120f));
+            72f, new Vector2(0f, 160f), new Vector2(800f, 110f));
+        panel.transform.Find("Action").GetComponent<TextMeshProUGUI>().color = ActionColor(red);
         CreateText("Instructions", panel.transform, fontTemplate,
             red
                 ? "Click / tap fast,\nor tap Space repeatedly.\nReach the target in time."
                 : "Release mouse / touch\nand Space.\nWait for the timer to end.",
-            60f, new Vector2(0f, 25f), new Vector2(790f, 250f), true);
+            56f, new Vector2(0f, -15f), new Vector2(790f, 230f), true);
         CreateText("Tip", panel.transform, fontTemplate,
             red ? "Your target is shown on the bar." : "Pressing early pops your gum!",
             46f, new Vector2(0f, -160f), new Vector2(790f, 100f), true);
@@ -187,6 +281,78 @@ public sealed class PanicEventGuide : MonoBehaviour
         button.navigation = new Navigation { mode = Navigation.Mode.None };
         CreateText("Label", image.transform, fontTemplate, label, 64f, Vector2.zero, new Vector2(330f, 104f));
         return button;
+    }
+
+    private void ToggleLanguage()
+    {
+        if (!IsOpen || !navigationReady || artwork == null || artwork.thaiFont == null) return;
+        thai = !thai;
+        LocalizePage(redPanel, true);
+        LocalizePage(bluePanel, false);
+    }
+
+    private void LocalizePage(GameObject page, bool red)
+    {
+        foreach (var label in page.GetComponentsInChildren<TextMeshProUGUI>(true))
+        {
+            bool language = label.transform.parent.name == "Language Button";
+            string english = null;
+            string translated = null;
+            switch (label.name)
+            {
+                case "Action":
+                    english = red ? "CLICK FAST!" : "HANDS OFF!";
+                    translated = red ? "กดให้เร็ว!" : "ห้ามกด!";
+                    break;
+                case "Instructions":
+                    english = red ? "Click / tap fast,\nor tap Space repeatedly.\nReach the target in time." : "Release mouse / touch\nand Space.\nWait for the timer to end.";
+                    translated = red ? "คลิก / แตะรัว ๆ\nหรือกด Space ซ้ำ ๆ\nให้ถึงเป้าหมายก่อนหมดเวลา" : "ปล่อยเมาส์ / หยุดแตะจอ\nและปล่อยปุ่ม Space\nรอจนหมดเวลา";
+                    break;
+                case "Tip":
+                    english = red ? "Your target is shown on the bar." : "Pressing early pops your gum!";
+                    translated = red ? "ดูเป้าหมายได้บนแถบ" : "กดก่อนหมดเวลา หมากฝรั่งจะแตก!";
+                    break;
+                case "Paused":
+                    english = "Game paused. Take your time.";
+                    translated = "เกมหยุดอยู่ อ่านได้ตามสบาย";
+                    break;
+                case "Page Number":
+                    english = red ? "PANIC EVENTS   1 / 2" : "PANIC EVENTS   2 / 2";
+                    translated = red ? "เหตุการณ์ตกใจ   1 / 2" : "เหตุการณ์ตกใจ   2 / 2";
+                    break;
+                case "Label":
+                    if (language) { english = "[ภาษาไทย]"; translated = "[English]"; }
+                    else if (label.transform.parent.name == "Next Button") { english = "Next"; translated = "ถัดไป"; }
+                    else if (label.transform.parent.name == "Back Button") { english = "Back"; translated = "ย้อนกลับ"; }
+                    else { english = "Close"; translated = "ปิด"; }
+                    break;
+            }
+            if (english == null) continue;
+            label.text = thai ? translated : english;
+            label.enableAutoSizing = thai;
+            label.fontSizeMax = label.name == "Action" ? 72f : label.name == "Instructions" ? 56f : label.name == "Tip" ? 46f : label.name == "Paused" ? 40f : label.name == "Page Number" ? 32f : language ? 36f : 64f;
+            label.fontSizeMin = label.fontSizeMax * 0.65f;
+            label.fontSize = label.fontSizeMax;
+            bool readable = label.name == "Instructions" || label.name == "Tip" || label.name == "Paused" || label.name == "Page Number";
+            label.color = readable || language ? new Color(0.07f, 0.13f, 0.17f) : Color.white;
+            if (label.name == "Action") label.color = ActionColor(red);
+            // Latin text retains the menu font; Thai uses the bundled glyph fallback.
+            if (thai || language)
+            {
+                label.font = artwork.thaiFont;
+                label.fontSharedMaterial = readable || language ? thaiReadableMaterial : thaiOutlinedMaterial;
+            }
+            else
+            {
+                label.font = menuFont;
+                label.fontSharedMaterial = readable ? readableTextMaterial : menuMaterial;
+            }
+        }
+    }
+
+    private static Color ActionColor(bool red)
+    {
+        return red ? new Color32(235, 45, 60, 255) : new Color32(35, 150, 245, 255);
     }
 
     private static Image CreateImage(string name, Transform parent, Sprite sprite, Color color)

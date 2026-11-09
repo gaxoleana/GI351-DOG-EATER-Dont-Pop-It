@@ -29,12 +29,15 @@ public class GameTimerUI : MonoBehaviour
     private float timer = 0f;
     private bool isFinished = false;
     private PauseMenuController pauseMenu;
+    private const string FastestClearKey = "DontPopIt.FastestClearSeconds";
+    private TextMeshProUGUI fastestClearText;
 
     void Start()
     {
         if (player == null) player = FindAnyObjectByType<PlayerController>();
         pauseMenu = FindAnyObjectByType<PauseMenuController>();
         if (winPanel != null) winPanel.SetActive(false);
+        CreateFastestClearText();
 
         if (altitudeUI != null)
         {
@@ -70,6 +73,7 @@ public class GameTimerUI : MonoBehaviour
     {
         if (isFinished) return;
         isFinished = true;
+        RecordClearTime();
 
         if (player != null)
         {
@@ -157,7 +161,48 @@ public class GameTimerUI : MonoBehaviour
             int minutes = Mathf.FloorToInt(timer / 60f), seconds = Mathf.FloorToInt(timer % 60f);
             totalTimeText.text = $"Total time : {minutes:00}:{seconds:00}";
         }
+        RefreshFastestClearText();
         if (inGameTimeText != null) inGameTimeText.gameObject.SetActive(false);
+    }
+
+    private void RecordClearTime()
+    {
+        if (float.IsNaN(timer) || float.IsInfinity(timer) || timer <= 0f) return;
+        float best = PlayerPrefs.GetFloat(FastestClearKey, float.MaxValue);
+        if (!PlayerPrefs.HasKey(FastestClearKey) || best <= 0f || float.IsNaN(best) || timer < best)
+        {
+            PlayerPrefs.SetFloat(FastestClearKey, timer);
+            PlayerPrefs.Save();
+        }
+    }
+
+    private void CreateFastestClearText()
+    {
+        if (totalTimeText == null || fastestClearText != null) return;
+        fastestClearText = Instantiate(totalTimeText, totalTimeText.transform.parent);
+        fastestClearText.name = "Fastest Clear";
+        fastestClearText.fontSize = totalTimeText.fontSize * 1.25f;
+        fastestClearText.enableAutoSizing = false;
+        fastestClearText.textWrappingMode = TextWrappingModes.NoWrap;
+        fastestClearText.overflowMode = TextOverflowModes.Overflow;
+        fastestClearText.alignment = TextAlignmentOptions.Center;
+        fastestClearText.color = new Color32(255, 205, 55, 255);
+        fastestClearText.raycastTarget = false;
+        fastestClearText.rectTransform.anchoredPosition = totalTimeText.rectTransform.anchoredPosition + new Vector2(0f, -120f);
+        // Make space for the larger record between the total and navigation buttons.
+        if (winPanel != null)
+            foreach (var button in winPanel.GetComponentsInChildren<UnityEngine.UI.Button>(true))
+                button.GetComponent<RectTransform>().anchoredPosition += new Vector2(0f, -140f);
+        RefreshFastestClearText();
+    }
+
+    private void RefreshFastestClearText()
+    {
+        if (fastestClearText == null) return;
+        float best = PlayerPrefs.GetFloat(FastestClearKey, -1f);
+        fastestClearText.text = best > 0f
+            ? $"Fastest clear : {Mathf.FloorToInt(best / 60f):00}:{Mathf.FloorToInt(best % 60f):00}"
+            : "Fastest clear : --:--";
     }
 
     private void HideGameplayHud()

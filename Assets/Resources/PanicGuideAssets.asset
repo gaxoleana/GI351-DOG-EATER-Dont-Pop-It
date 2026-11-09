@@ -1,0 +1,17 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2ba1c81288c38e44fa6f0fa41d1ca6b8, type: 3}
+  m_Name: PanicGuideAssets
+  m_EditorClassIdentifier: Assembly-CSharp::PanicGuideAssets
+  shock: {fileID: -6102805860222315482, guid: d973512864c242946b948fa233b9a558, type: 3}
+  relax: {fileID: 1176280030134115793, guid: 52d87519b04a84f439e4ab20fee43f8d, type: 3}
+  thaiFont: {fileID: 11400000, guid: ebb03a2cc94527248ae4079238d7aadc, type: 2}
