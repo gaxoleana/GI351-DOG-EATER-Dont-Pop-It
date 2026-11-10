@@ -8,13 +8,17 @@ public class ButtonManager : MonoBehaviour
     // เรียกใช้จาก OnClick() ของ Button เพื่อโหลด Scene ที่ต้องการ
     public void LoadGameScene()
     {
+        Time.timeScale = 1f;
         SceneManager.LoadScene("GameSceneV.1");
     }
 
     public void OpenSettings()
     {
         if (settingsPanel != null)
+        {
+            settingsPanel.transform.SetAsLastSibling();
             settingsPanel.SetActive(true);
+        }
     }
 
     public void CloseSettings()
